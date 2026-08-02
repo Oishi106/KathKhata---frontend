@@ -1,0 +1,103 @@
+{
+  "common": {
+    "appName": "KathKhata AI",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "viewAll": "View all",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "amount": "Amount",
+    "notes": "Notes"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "woodInventory": "Wood Inventory",
+    "cuttingOrders": "Cutting Orders",
+    "costCalculator": "Cost Calculator",
+    "expenses": "Expenses",
+    "sales": "Sales",
+    "reports": "Reports",
+    "aiAssistant": "AI Assistant",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "phone": "Phone number",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "loginButton": "Log in",
+    "otpTitle": "Verify OTP",
+    "otpSubtitle": "Enter the 6-digit code sent to your phone",
+    "resetPassword": "Reset password",
+    "newPassword": "New password",
+    "register": "Register",
+    "registerButton": "Create account",
+    "name": "Your name",
+    "namePlaceholder": "e.g. Karim Uddin",
+    "businessName": "Sawmill / business name",
+    "businessNamePlaceholder": "e.g. Karim Saw Mill",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?"
+  },
+  "dashboard": {
+    "todayRevenue": "Today's Revenue",
+    "todayExpense": "Today's Expense",
+    "todayProfit": "Today's Profit",
+    "availableWood": "Available Wood (CFT)",
+    "pendingOrders": "Pending Orders",
+    "completedOrders": "Completed Orders",
+    "monthlyProfit": "Monthly Profit",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions"
+  },
+  "woodInventory": {
+    "title": "Wood Inventory",
+    "addWood": "Add Wood",
+    "woodType": "Wood Type",
+    "supplier": "Supplier",
+    "purchaseDate": "Purchase Date",
+    "purchasePrice": "Purchase Price",
+    "transportCost": "Transport Cost",
+    "totalCFT": "Total CFT",
+    "availableCFT": "Available CFT",
+    "location": "Location"
+  },
+  "cuttingOrders": {
+    "title": "Cutting Orders",
+    "createOrder": "Create Order",
+    "customerName": "Customer Name",
+    "length": "Length",
+    "width": "Width",
+    "thickness": "Thickness",
+    "quantity": "Quantity",
+    "estimatedCost": "Estimated Cost"
+  },
+  "costCalculator": {
+    "title": "Product Cost Calculator",
+    "woodCost": "Wood Cost",
+    "laborCost": "Labor Cost",
+    "machineCost": "Machine Cost",
+    "electricity": "Electricity",
+    "polish": "Polish",
+    "packaging": "Packaging",
+    "transport": "Transport",
+    "totalCost": "Total Cost",
+    "sellingPrice": "Suggested Selling Price",
+    "profit": "Profit",
+    "margin": "Margin"
+  },
+  "ai": {
+    "title": "AI Business Assistant",
+    "placeholder": "Ask about your business...",
+    "suggestedQuestions": "Suggested Questions"
+  }
+}

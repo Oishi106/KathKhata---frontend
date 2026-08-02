@@ -1,0 +1,103 @@
+{
+  "common": {
+    "appName": "কাঠখাতা এআই",
+    "save": "সংরক্ষণ করুন",
+    "cancel": "বাতিল",
+    "delete": "মুছে ফেলুন",
+    "edit": "সম্পাদনা",
+    "add": "যোগ করুন",
+    "search": "খুঁজুন",
+    "filter": "ফিল্টার",
+    "loading": "লোড হচ্ছে...",
+    "noData": "কোনো তথ্য নেই",
+    "viewAll": "সব দেখুন",
+    "actions": "কার্যক্রম",
+    "status": "অবস্থা",
+    "date": "তারিখ",
+    "amount": "পরিমাণ",
+    "notes": "মন্তব্য"
+  },
+  "nav": {
+    "dashboard": "ড্যাশবোর্ড",
+    "woodInventory": "কাঠের মজুদ",
+    "cuttingOrders": "কাটিং অর্ডার",
+    "costCalculator": "খরচ ক্যালকুলেটর",
+    "expenses": "খরচ",
+    "sales": "বিক্রয়",
+    "reports": "রিপোর্ট",
+    "aiAssistant": "এআই সহকারী",
+    "settings": "সেটিংস",
+    "logout": "লগআউট"
+  },
+  "auth": {
+    "login": "লগইন করুন",
+    "phone": "ফোন নম্বর",
+    "password": "পাসওয়ার্ড",
+    "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
+    "loginButton": "প্রবেশ করুন",
+    "otpTitle": "ওটিপি যাচাই করুন",
+    "otpSubtitle": "আপনার ফোনে পাঠানো ৬-সংখ্যার কোডটি দিন",
+    "resetPassword": "পাসওয়ার্ড রিসেট করুন",
+    "newPassword": "নতুন পাসওয়ার্ড",
+    "register": "নিবন্ধন করুন",
+    "registerButton": "অ্যাকাউন্ট তৈরি করুন",
+    "name": "আপনার নাম",
+    "namePlaceholder": "যেমন: করিম উদ্দিন",
+    "businessName": "করাতকল/ব্যবসার নাম",
+    "businessNamePlaceholder": "যেমন: করিম স মিল",
+    "noAccount": "অ্যাকাউন্ট নেই?",
+    "haveAccount": "আগে থেকেই অ্যাকাউন্ট আছে?"
+  },
+  "dashboard": {
+    "todayRevenue": "আজকের আয়",
+    "todayExpense": "আজকের খরচ",
+    "todayProfit": "আজকের লাভ",
+    "availableWood": "মজুদ কাঠ (সিএফটি)",
+    "pendingOrders": "চলমান অর্ডার",
+    "completedOrders": "সম্পন্ন অর্ডার",
+    "monthlyProfit": "মাসিক লাভ",
+    "recentActivity": "সাম্প্রতিক কার্যক্রম",
+    "quickActions": "দ্রুত কার্যক্রম"
+  },
+  "woodInventory": {
+    "title": "কাঠের মজুদ",
+    "addWood": "কাঠ যোগ করুন",
+    "woodType": "কাঠের ধরন",
+    "supplier": "সরবরাহকারী",
+    "purchaseDate": "ক্রয়ের তারিখ",
+    "purchasePrice": "ক্রয় মূল্য",
+    "transportCost": "পরিবহন খরচ",
+    "totalCFT": "মোট সিএফটি",
+    "availableCFT": "উপলব্ধ সিএফটি",
+    "location": "অবস্থান"
+  },
+  "cuttingOrders": {
+    "title": "কাটিং অর্ডার",
+    "createOrder": "নতুন অর্ডার তৈরি করুন",
+    "customerName": "গ্রাহকের নাম",
+    "length": "দৈর্ঘ্য",
+    "width": "প্রস্থ",
+    "thickness": "পুরুত্ব",
+    "quantity": "পরিমাণ",
+    "estimatedCost": "আনুমানিক খরচ"
+  },
+  "costCalculator": {
+    "title": "পণ্যের খরচ ক্যালকুলেটর",
+    "woodCost": "কাঠের খরচ",
+    "laborCost": "শ্রমিক খরচ",
+    "machineCost": "মেশিন খরচ",
+    "electricity": "বিদ্যুৎ",
+    "polish": "পলিশ",
+    "packaging": "প্যাকেজিং",
+    "transport": "পরিবহন",
+    "totalCost": "মোট খরচ",
+    "sellingPrice": "প্রস্তাবিত বিক্রয় মূল্য",
+    "profit": "লাভ",
+    "margin": "মার্জিন"
+  },
+  "ai": {
+    "title": "এআই ব্যবসায়িক সহকারী",
+    "placeholder": "আপনার ব্যবসা সম্পর্কে জিজ্ঞাসা করুন...",
+    "suggestedQuestions": "প্রস্তাবিত প্রশ্ন"
+  }
+}
