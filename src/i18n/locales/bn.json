@@ -67,9 +67,12 @@
     "purchaseDate": "ক্রয়ের তারিখ",
     "purchasePrice": "ক্রয় মূল্য",
     "transportCost": "পরিবহন খরচ",
-    "totalCFT": "মোট সিএফটি",
-    "availableCFT": "উপলব্ধ সিএফটি",
-    "location": "অবস্থান"
+    "totalCFT": "মোট CFT",
+    "availableCFT": "উপলব্ধ CFT",
+    "location": "অবস্থান",
+    "status": "অবস্থা",
+    "date": "তারিখ",
+    "searchPlaceholder": "কাঠ, সরবরাহকারী, অবস্থান খুঁজুন..."
   },
   "cuttingOrders": {
     "title": "কাটিং অর্ডার",
@@ -99,5 +102,48 @@
     "title": "এআই ব্যবসায়িক সহকারী",
     "placeholder": "আপনার ব্যবসা সম্পর্কে জিজ্ঞাসা করুন...",
     "suggestedQuestions": "প্রস্তাবিত প্রশ্ন"
+  },
+  "reports": {
+    "title": "ব্যবসায়িক রিপোর্ট",
+    "daily": "দৈনিক",
+    "weekly": "সাপ্তাহিক",
+    "monthly": "মাসিক",
+    "yearly": "বাৎসরিক",
+    "revenue": "আয়",
+    "expense": "খরচ",
+    "profit": "লাভ",
+    "loss": "ক্ষতি",
+    "noData": "এই সময়ের জন্য এখনো কোনো ডেটা নেই"
+  },
+  "sales": {
+    "title": "বিক্রয়",
+    "recordSale": "বিক্রয় রেকর্ড করুন",
+    "product": "পণ্য",
+    "customer": "গ্রাহক",
+    "qty": "পরিমাণ",
+    "revenue": "আয়",
+    "profit": "লাভ",
+    "date": "তারিখ",
+    "productName": "পণ্যের নাম",
+    "customerOptional": "গ্রাহকের নাম (ঐচ্ছিক)",
+    "unitPrice": "একক মূল্য (৳)",
+    "costOfGoods": "উৎপাদন খরচ (৳)"
+  },
+  "expense": {
+    "title": "খরচ",
+    "addExpense": "খরচ যোগ করুন",
+    "category": "বিভাগ",
+    "amount": "পরিমাণ",
+    "description": "বিবরণ",
+    "date": "তারিখ",
+    "categoryLabel": "খরচের ধরন",
+    "amountLabel": "টাকার পরিমাণ (৳)",
+    "descriptionOptional": "বিবরণ (ঐচ্ছিক)",
+    "salary": "বেতন",
+    "electricity": "বিদ্যুৎ",
+    "transport": "পরিবহন",
+    "machineRepair": "মেশিন মেরামত",
+    "fuel": "জ্বালানি",
+    "miscellaneous": "বিবিধ"
   }
 }

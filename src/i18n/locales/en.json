@@ -69,7 +69,10 @@
     "transportCost": "Transport Cost",
     "totalCFT": "Total CFT",
     "availableCFT": "Available CFT",
-    "location": "Location"
+    "location": "Location",
+    "status": "Status",
+    "date": "Date",
+    "searchPlaceholder": "Search wood, supplier, location..."
   },
   "cuttingOrders": {
     "title": "Cutting Orders",
@@ -99,5 +102,48 @@
     "title": "AI Business Assistant",
     "placeholder": "Ask about your business...",
     "suggestedQuestions": "Suggested Questions"
+  },
+  "reports": {
+    "title": "Business report",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "revenue": "Revenue",
+    "expense": "Expense",
+    "profit": "Profit",
+    "loss": "Loss",
+    "noData": "No data for this period yet"
+  },
+  "sales": {
+    "title": "Sales",
+    "recordSale": "Record Sale",
+    "product": "Product",
+    "customer": "Customer",
+    "qty": "Qty",
+    "revenue": "Revenue",
+    "profit": "Profit",
+    "date": "Date",
+    "productName": "Product Name",
+    "customerOptional": "Customer Name (optional)",
+    "unitPrice": "Unit Price (৳)",
+    "costOfGoods": "Cost of Goods (৳)"
+  },
+  "expense": {
+    "title": "Expenses",
+    "addExpense": "Add Expense",
+    "category": "Category",
+    "amount": "Amount",
+    "description": "Description",
+    "date": "Date",
+    "categoryLabel": "Expense Category",
+    "amountLabel": "Amount (৳)",
+    "descriptionOptional": "Description (optional)",
+    "salary": "Salary",
+    "electricity": "Electricity",
+    "transport": "Transport",
+    "machineRepair": "Machine Repair",
+    "fuel": "Fuel",
+    "miscellaneous": "Miscellaneous"
   }
 }
