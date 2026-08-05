@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
@@ -13,13 +13,19 @@ import {
   FileBarChart,
   Bot,
   Settings,
-  TreePine
+  TreePine,
+  LogOut
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
 
 export function Sidebar({ locale }: { locale: string }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
+  const router = useRouter();
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const items = [
     { href: `/${locale}/dashboard`, label: t("dashboard"), icon: LayoutDashboard },
@@ -32,6 +38,18 @@ export function Sidebar({ locale }: { locale: string }) {
     { href: `/${locale}/ai-assistant`, label: t("aiAssistant"), icon: Bot },
     { href: `/${locale}/settings`, label: t("settings"), icon: Settings }
   ];
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // even if the API call fails, still clear local auth state
+    } finally {
+      clearAuth();
+      toast.success("Logged out");
+      router.push(`/${locale}/login`);
+    }
+  };
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-wood-100 dark:border-wood-700 bg-white dark:bg-wood-800 h-screen sticky top-0 py-6">
@@ -62,6 +80,16 @@ export function Sidebar({ locale }: { locale: string }) {
           );
         })}
       </nav>
+
+      <div className="px-3 pt-3 border-t border-wood-100 dark:border-wood-700">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          {t("logout")}
+        </button>
+      </div>
     </aside>
   );
 }
