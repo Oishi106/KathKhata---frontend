@@ -145,5 +145,12 @@
     "machineRepair": "Machine Repair",
     "fuel": "Fuel",
     "miscellaneous": "Miscellaneous"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No new notifications",
+    "lowStock": "{wood} — only {cft} CFT available in stock.",
+    "outOfStock": "{wood} is out of stock",
+    "pendingOrder": "{customer}'s order is still pending"
   }
 }

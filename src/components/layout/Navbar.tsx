@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationBell } from "./NotificationBell";
 import { useAuthStore } from "@/store/authStore";
 
 export function Navbar({ locale, onMenuClick }: { locale: string; onMenuClick?: () => void }) {
@@ -19,9 +20,7 @@ export function Navbar({ locale, onMenuClick }: { locale: string; onMenuClick?: 
       <div className="flex items-center gap-3">
         <LanguageSwitcher currentLocale={locale} />
         <ThemeToggle />
-        <button className="rounded-xl p-2.5 bg-wood-100 dark:bg-wood-700 text-wood-600 dark:text-cream-100 hover:bg-wood-200 dark:hover:bg-wood-600 relative">
-          <Bell className="h-5 w-5" />
-        </button>
+        <NotificationBell />
         <div className="flex items-center gap-2 pl-2 border-l border-wood-100 dark:border-wood-700">
           <div className="h-9 w-9 rounded-full bg-forest-600 text-white flex items-center justify-center font-semibold">
             {user?.name?.charAt(0) ?? "S"}

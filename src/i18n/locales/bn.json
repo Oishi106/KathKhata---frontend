@@ -145,5 +145,12 @@
     "machineRepair": "মেশিন মেরামত",
     "fuel": "জ্বালানি",
     "miscellaneous": "বিবিধ"
+  },
+  "notifications": {
+    "title": "নোটিফিকেশন",
+    "empty": "কোনো নতুন নোটিফিকেশন নেই",
+    "lowStock": "{wood} — মাত্র {cft} সিএফটি মজুদ আছে",
+    "outOfStock": "{wood} মজুদ শেষ হয়ে গেছে",
+    "pendingOrder": "{customer} এর অর্ডার এখনো চলমান আছে"
   }
 }
