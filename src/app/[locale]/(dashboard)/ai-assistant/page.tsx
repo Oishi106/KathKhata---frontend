@@ -4,7 +4,22 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Send, User, Plus, MessageSquare, Sparkles, Mic, MicOff } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Bot,
+  Send,
+  User,
+  Plus,
+  MessageSquare,
+  Sparkles,
+  Mic,
+  MicOff,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Check,
+  X
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -18,6 +33,152 @@ interface ConversationSummary {
   _id: string;
   title: string;
   updatedAt: string;
+}
+
+function ConversationItem({
+  conversation,
+  active,
+  onOpen,
+  onRenamed,
+  onDeleted
+}: {
+  conversation: ConversationSummary;
+  active: boolean;
+  onOpen: () => void;
+  onRenamed: () => void;
+  onDeleted: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(conversation.title);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const saveRename = async () => {
+    if (!titleDraft.trim()) {
+      setEditing(false);
+      setTitleDraft(conversation.title);
+      return;
+    }
+    try {
+      await api.patch(`/ai/conversations/${conversation._id}`, { title: titleDraft.trim() });
+      onRenamed();
+    } catch {
+      toast.error("Rename failed");
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  const doDelete = async () => {
+    try {
+      await api.delete(`/ai/conversations/${conversation._id}`);
+      onDeleted();
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1.5">
+        <input
+          autoFocus
+          value={titleDraft}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") saveRename();
+            if (e.key === "Escape") {
+              setEditing(false);
+              setTitleDraft(conversation.title);
+            }
+          }}
+          className="flex-1 text-sm rounded-lg border border-forest-300 px-2 py-1 bg-white dark:bg-wood-800 focus:outline-none"
+        />
+        <button onClick={saveRename} className="p-1 text-forest-600 hover:bg-forest-50 rounded">
+          <Check className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => {
+            setEditing(false);
+            setTitleDraft(conversation.title);
+          }}
+          className="p-1 text-wood-400 hover:bg-wood-50 rounded"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "group relative flex items-center rounded-lg hover:bg-wood-50 dark:hover:bg-wood-700",
+        active && "bg-forest-50 dark:bg-forest-900/30"
+      )}
+    >
+      <button onClick={onOpen} className="flex-1 text-left px-3 py-2 text-sm flex items-start gap-2 min-w-0">
+        <MessageSquare className="h-4 w-4 mt-0.5 shrink-0 text-wood-400" />
+        <span className="truncate text-wood-700 dark:text-cream-100">{conversation.title}</span>
+      </button>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen((s) => !s);
+          setConfirmDelete(false);
+        }}
+        className="opacity-0 group-hover:opacity-100 p-1.5 mr-1 rounded hover:bg-wood-200 dark:hover:bg-wood-600 shrink-0"
+      >
+        <MoreVertical className="h-4 w-4 text-wood-500" />
+      </button>
+
+      {menuOpen && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
+          <div className="absolute right-2 top-9 z-40 w-40 rounded-xl bg-white dark:bg-wood-800 shadow-card border border-wood-100 dark:border-wood-700 py-1">
+            {!confirmDelete ? (
+              <>
+                <button
+                  onClick={() => {
+                    setEditing(true);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-wood-700 dark:text-cream-100 hover:bg-wood-50 dark:hover:bg-wood-700"
+                >
+                  <Pencil className="h-4 w-4" /> Rename
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </button>
+              </>
+            ) : (
+              <div className="px-3 py-2">
+                <p className="text-xs text-wood-500 mb-2">Delete this chat?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={doDelete}
+                    className="flex-1 text-xs font-medium bg-red-500 text-white rounded-lg py-1.5"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 text-xs font-medium bg-wood-100 dark:bg-wood-700 rounded-lg py-1.5"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function AiAssistantPage() {
@@ -35,7 +196,6 @@ export default function AiAssistantPage() {
 
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
-
   const shouldListenRef = useRef(false);
 
   useEffect(() => {
@@ -49,7 +209,6 @@ export default function AiAssistantPage() {
     recognition.lang = lang === "bn" ? "bn-BD" : "en-US";
 
     recognition.onresult = (event: any) => {
-      // Append only the newly finalized results from this event
       let finalText = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
@@ -62,15 +221,12 @@ export default function AiAssistantPage() {
     };
 
     recognition.onerror = (event: any) => {
-      // "no-speech" fires often during pauses — ignore and keep listening
       if (event.error !== "no-speech") {
         shouldListenRef.current = false;
         setIsListening(false);
       }
     };
 
-    // If the browser auto-stops (some do after a timeout) but the user
-    // hasn't manually turned it off, restart automatically.
     recognition.onend = () => {
       if (shouldListenRef.current) {
         try {
@@ -150,6 +306,15 @@ export default function AiAssistantPage() {
     setShowHistory(false);
   };
 
+  const refreshConversations = () => {
+    queryClient.invalidateQueries({ queryKey: ["ai-conversations"] });
+  };
+
+  const handleDeleted = (deletedId: string) => {
+    if (conversationId === deletedId) startNewChat();
+    refreshConversations();
+  };
+
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
     setMessages((m) => [...m, { role: "user", content: text }]);
@@ -159,7 +324,7 @@ export default function AiAssistantPage() {
       const { data } = await api.post("/ai/ask", { conversationId, message: text });
       setConversationId(data.data.conversationId);
       setMessages((m) => [...m, { role: "assistant", content: data.data.reply }]);
-      queryClient.invalidateQueries({ queryKey: ["ai-conversations"] });
+      refreshConversations();
     } catch {
       setMessages((m) => [
         ...m,
@@ -179,7 +344,7 @@ export default function AiAssistantPage() {
   return (
     <div className="flex gap-4 h-[calc(100vh-8rem)]">
       {/* Recent conversations — desktop sidebar */}
-      <div className="hidden lg:flex flex-col w-64 shrink-0 card !p-3">
+      <div className="hidden lg:flex flex-col w-72 shrink-0 card !p-3">
         <Button size="sm" className="w-full mb-3" onClick={startNewChat}>
           <Plus className="h-4 w-4" /> {t("newChat") ?? "New chat"}
         </Button>
@@ -188,17 +353,14 @@ export default function AiAssistantPage() {
         </p>
         <div className="flex-1 overflow-y-auto space-y-1">
           {(conversations ?? []).map((c) => (
-            <button
+            <ConversationItem
               key={c._id}
-              onClick={() => loadConversation(c._id)}
-              className={cn(
-                "w-full text-left px-3 py-2 rounded-lg text-sm flex items-start gap-2 hover:bg-wood-50 dark:hover:bg-wood-700",
-                conversationId === c._id && "bg-forest-50 dark:bg-forest-900/30"
-              )}
-            >
-              <MessageSquare className="h-4 w-4 mt-0.5 shrink-0 text-wood-400" />
-              <span className="truncate text-wood-700 dark:text-cream-100">{c.title}</span>
-            </button>
+              conversation={c}
+              active={conversationId === c._id}
+              onOpen={() => loadConversation(c._id)}
+              onRenamed={refreshConversations}
+              onDeleted={() => handleDeleted(c._id)}
+            />
           ))}
           {(conversations ?? []).length === 0 && (
             <p className="text-xs text-wood-300 px-2 py-4 text-center">
@@ -331,14 +493,14 @@ export default function AiAssistantPage() {
               <Plus className="h-4 w-4" /> {t("newChat") ?? "New chat"}
             </Button>
             {(conversations ?? []).map((c) => (
-              <button
+              <ConversationItem
                 key={c._id}
-                onClick={() => loadConversation(c._id)}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm flex items-start gap-2 hover:bg-wood-50 dark:hover:bg-wood-700"
-              >
-                <MessageSquare className="h-4 w-4 mt-0.5 shrink-0 text-wood-400" />
-                <span className="truncate text-wood-700 dark:text-cream-100">{c.title}</span>
-              </button>
+                conversation={c}
+                active={conversationId === c._id}
+                onOpen={() => loadConversation(c._id)}
+                onRenamed={refreshConversations}
+                onDeleted={() => handleDeleted(c._id)}
+              />
             ))}
           </div>
         </div>

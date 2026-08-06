@@ -57,7 +57,7 @@ export function Sidebar({ locale }: { locale: string }) {
         <div className="rounded-xl bg-forest-600 p-2">
           <TreePine className="h-6 w-6 text-white" />
         </div>
-        <span className="font-bold text-lg text-wood-900 dark:text-cream-50">KathKhata AI</span>
+        <span className="font-bold text-lg text-wood-900 dark:text-cream-50">KathKhata </span>
       </div>
 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
