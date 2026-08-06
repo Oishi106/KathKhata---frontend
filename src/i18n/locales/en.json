@@ -101,7 +101,9 @@
   "ai": {
     "title": "AI Business Assistant",
     "placeholder": "Ask about your business...",
-    "suggestedQuestions": "Suggested Questions"
+    "suggestedQuestions": "Suggested Questions",
+    "newChat": "New Chat",
+    "recentConversations": "Recent Conversations"
   },
   "reports": {
     "title": "Business report",

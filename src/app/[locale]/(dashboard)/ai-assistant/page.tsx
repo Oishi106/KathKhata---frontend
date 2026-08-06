@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Send, User, Plus, MessageSquare, Sparkles } from "lucide-react";
+import { Bot, Send, User, Plus, MessageSquare, Sparkles, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
-import { cn, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface Message {
   role: "user" | "assistant";
@@ -32,6 +32,84 @@ export default function AiAssistantPage() {
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [showHistory, setShowHistory] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const shouldListenRef = useRef(false);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = lang === "bn" ? "bn-BD" : "en-US";
+
+    recognition.onresult = (event: any) => {
+      // Append only the newly finalized results from this event
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript;
+        }
+      }
+      if (finalText.trim()) {
+        setInput((prev) => (prev ? `${prev} ${finalText.trim()}` : finalText.trim()));
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      // "no-speech" fires often during pauses — ignore and keep listening
+      if (event.error !== "no-speech") {
+        shouldListenRef.current = false;
+        setIsListening(false);
+      }
+    };
+
+    // If the browser auto-stops (some do after a timeout) but the user
+    // hasn't manually turned it off, restart automatically.
+    recognition.onend = () => {
+      if (shouldListenRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          setIsListening(false);
+        }
+      } else {
+        setIsListening(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      shouldListenRef.current = false;
+      recognition.abort();
+    };
+  }, [lang]);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert(
+        lang === "bn"
+          ? "আপনার ব্রাউজার ভয়েস ইনপুট সাপোর্ট করে না। Chrome ব্যবহার করুন।"
+          : "Your browser doesn't support voice input. Please use Chrome."
+      );
+      return;
+    }
+    if (isListening) {
+      shouldListenRef.current = false;
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      shouldListenRef.current = true;
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   const { data: suggested } = useQuery({
     queryKey: ["ai-suggested-questions", lang],
@@ -87,7 +165,10 @@ export default function AiAssistantPage() {
         ...m,
         {
           role: "assistant",
-          content: lang === "bn" ? "দুঃখিত, উত্তর তৈরি করা যায়নি। আবার চেষ্টা করুন।" : "Sorry, I couldn't process that. Please try again."
+          content:
+            lang === "bn"
+              ? "দুঃখিত, উত্তর তৈরি করা যায়নি। আবার চেষ্টা করুন।"
+              : "Sorry, I couldn't process that. Please try again."
         }
       ]);
     } finally {
@@ -136,7 +217,9 @@ export default function AiAssistantPage() {
             <div>
               <h1 className="text-xl font-bold text-wood-900 dark:text-cream-50">{t("title")}</h1>
               <p className="text-sm text-wood-500 dark:text-wood-300">
-                {lang === "bn" ? "আপনার করাতকল ব্যবসা সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করুন" : "Ask anything about your sawmill business"}
+                {lang === "bn"
+                  ? "আপনার করাতকল ব্যবসা সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করুন"
+                  : "Ask anything about your sawmill business"}
               </p>
             </div>
           </div>
@@ -215,11 +298,23 @@ export default function AiAssistantPage() {
           }}
           className="flex items-center gap-2"
         >
+          <button
+            type="button"
+            onClick={toggleVoiceInput}
+            className={cn(
+              "rounded-xl p-3 transition-colors shrink-0",
+              isListening
+                ? "bg-red-500 text-white animate-pulse"
+                : "bg-wood-100 dark:bg-wood-700 text-wood-500 hover:bg-wood-200 dark:hover:bg-wood-600"
+            )}
+          >
+            {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          </button>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="input-field flex-1"
-            placeholder={t("placeholder")}
+            placeholder={isListening ? (lang === "bn" ? "শুনছি..." : "Listening...") : t("placeholder")}
           />
           <Button type="submit" loading={loading} disabled={!input.trim()}>
             <Send className="h-5 w-5" />

@@ -98,10 +98,12 @@
     "profit": "লাভ",
     "margin": "মার্জিন"
   },
-  "ai": {
+"ai": {
     "title": "এআই ব্যবসায়িক সহকারী",
     "placeholder": "আপনার ব্যবসা সম্পর্কে জিজ্ঞাসা করুন...",
-    "suggestedQuestions": "প্রস্তাবিত প্রশ্ন"
+    "suggestedQuestions": "প্রস্তাবিত প্রশ্ন",
+    "newChat": "নতুন কথোপকথন",
+    "recentConversations": "সাম্প্রতিক কথোপকথন"
   },
   "reports": {
     "title": "ব্যবসায়িক রিপোর্ট",
