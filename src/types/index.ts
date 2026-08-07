@@ -59,6 +59,41 @@ export interface Sale {
   date: string;
 }
 
+export interface Supplier {
+  _id: string;
+  name: string;
+  companyName?: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  totalDue: number;
+  notes?: string;
+  status: "active" | "inactive";
+  createdAt: string;
+}
+
+export interface Purchase {
+  _id: string;
+  supplier: string | Supplier;
+  purchaseDate: string;
+  invoiceNumber?: string;
+  woodType: string;
+  quantity: number;
+  totalCFT: number;
+  purchasePrice: number;
+  transportCost: number;
+  loadingCost: number;
+  unloadingCost: number;
+  otherExpenses: number;
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  paymentMethod?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DashboardSummary {
   todayRevenue: number;
   todayExpense: number;
