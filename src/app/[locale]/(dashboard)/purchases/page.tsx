@@ -20,7 +20,6 @@ const emptyForm = {
   invoiceNumber: "",
   woodType: "",
   totalCFT: "",
-  quantity: "1",
   purchasePrice: "",
   transportCost: "",
   loadingCost: "",
@@ -77,7 +76,7 @@ export default function PurchasesPage() {
         purchaseDate: form.purchaseDate,
         invoiceNumber: form.invoiceNumber || undefined,
         woodType: form.woodType,
-        quantity: Number(form.quantity),
+        quantity: 1,
         totalCFT: Number(form.totalCFT),
         purchasePrice: Number(form.purchasePrice),
         transportCost: Number(form.transportCost) || 0,
@@ -202,10 +201,7 @@ export default function PurchasesPage() {
               <label className="block text-sm font-medium mb-1">{t("totalCFT")}</label>
               <input type="number" required min={0} step="0.01" className="input-field" value={form.totalCFT} onChange={update("totalCFT")} />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("quantity")}</label>
-              <input type="number" required min={1} className="input-field" value={form.quantity} onChange={update("quantity")} />
-            </div>
+            
             <div>
               <label className="block text-sm font-medium mb-1">{t("purchasePrice")}</label>
               <input type="number" required min={0} className="input-field" value={form.purchasePrice} onChange={update("purchasePrice")} />

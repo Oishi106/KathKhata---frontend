@@ -94,6 +94,27 @@ export interface Purchase {
   updatedAt: string;
 }
 
+export interface CustomerPaymentRecord {
+  amount: number;
+  date: string;
+  method?: string;
+  note?: string;
+}
+
+export interface Customer {
+  _id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  totalDue: number;
+  advanceBalance: number;
+  paymentHistory?: CustomerPaymentRecord[];
+  notes?: string;
+  status: "active" | "inactive";
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   todayRevenue: number;
   todayExpense: number;

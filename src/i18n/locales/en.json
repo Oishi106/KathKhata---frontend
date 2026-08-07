@@ -17,11 +17,12 @@
     "amount": "Amount",
     "notes": "Notes"
   },
-  "nav": {
+"nav": {
     "dashboard": "Dashboard",
     "woodInventory": "Wood Inventory",
     "suppliers": "Suppliers",
     "purchases": "Purchases",
+    "customers": "Customers",
     "cuttingOrders": "Cutting Orders",
     "costCalculator": "Cost Calculator",
     "expenses": "Expenses",
@@ -148,6 +149,23 @@
     "paymentMethod": "Payment Method",
     "notes": "Notes",
     "downloadInvoice": "Download Invoice"
+  },
+  "customers": {
+    "title": "Customers",
+    "addCustomer": "Add Customer",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email (optional)",
+    "address": "Address",
+    "totalDue": "Total Due",
+    "advanceBalance": "Advance Balance",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "notes": "Notes",
+    "totalCustomers": "Total Customers",
+    "recordPayment": "Record Payment",
+    "searchPlaceholder": "Search name, phone..."
   },
   "reports": {
     "title": "Business report",

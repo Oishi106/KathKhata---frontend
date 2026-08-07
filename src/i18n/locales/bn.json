@@ -17,11 +17,12 @@
     "amount": "পরিমাণ",
     "notes": "মন্তব্য"
   },
-  "nav": {
+"nav": {
     "dashboard": "ড্যাশবোর্ড",
     "woodInventory": "কাঠের মজুদ",
     "suppliers": "সরবরাহকারী",
     "purchases": "ক্রয়",
+    "customers": "গ্রাহক",
     "cuttingOrders": "কাটিং অর্ডার",
     "costCalculator": "খরচ ক্যালকুলেটর",
     "expenses": "খরচ",
@@ -148,6 +149,23 @@
     "paymentMethod": "পেমেন্ট পদ্ধতি",
     "notes": "মন্তব্য",
     "downloadInvoice": "চালান ডাউনলোড করুন"
+  },
+  "customers": {
+    "title": "গ্রাহক",
+    "addCustomer": "গ্রাহক যোগ করুন",
+    "name": "নাম",
+    "phone": "ফোন নম্বর",
+    "email": "ইমেইল (ঐচ্ছিক)",
+    "address": "ঠিকানা",
+    "totalDue": "মোট বকেয়া",
+    "advanceBalance": "অগ্রিম জমা",
+    "status": "অবস্থা",
+    "active": "সক্রিয়",
+    "inactive": "নিষ্ক্রিয়",
+    "notes": "মন্তব্য",
+    "totalCustomers": "মোট গ্রাহক",
+    "recordPayment": "পেমেন্ট রেকর্ড করুন",
+    "searchPlaceholder": "নাম, ফোন নম্বর খুঁজুন..."
   },
   "reports": {
     "title": "ব্যবসায়িক রিপোর্ট",

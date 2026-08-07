@@ -16,7 +16,8 @@ import {
   TreePine,
   LogOut,
   Truck,
-  ShoppingCart
+  ShoppingCart,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export function Sidebar({ locale }: { locale: string }) {
     { href: `/${locale}/wood-inventory`, label: t("woodInventory"), icon: Warehouse },
     { href: `/${locale}/suppliers`, label: t("suppliers") ?? "সরবরাহকারী", icon: Truck },
     { href: `/${locale}/purchases`, label: t("purchases") ?? "ক্রয়", icon: ShoppingCart },
+    { href: `/${locale}/customers`, label: t("customers") ?? "গ্রাহক", icon: Users },
     { href: `/${locale}/cutting-orders`, label: t("cuttingOrders"), icon: Scissors },
     { href: `/${locale}/product-cost-calculator`, label: t("costCalculator"), icon: Calculator },
     { href: `/${locale}/expenses`, label: t("expenses"), icon: Receipt },
