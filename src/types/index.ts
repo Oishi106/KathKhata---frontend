@@ -223,6 +223,21 @@ export interface Payroll {
   createdAt: string;
 }
 
+export interface BusinessSettings {
+  _id: string;
+  businessName: string;
+  logoUrl?: string;
+  phone?: string;
+  address?: string;
+  currency: string;
+  currencySymbol: string;
+  timezone: string;
+  invoicePrefix: string;
+  invoiceStartingNumber: number;
+  dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+  createdAt: string;
+  updatedAt: string;
+}
 export interface DashboardSummary {
   todayRevenue: number;
   todayExpense: number;

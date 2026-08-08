@@ -19,6 +19,7 @@
   },
 "nav": {
     "dashboard": "Dashboard",
+    "woodMeasurement": "Wood Measurement",
     "woodInventory": "Wood Inventory",
     "suppliers": "Suppliers",
     "purchases": "Purchases",
@@ -264,6 +265,21 @@
     "adjust": "Adjust",
     "viewPayroll": "View Payroll"
   },
+
+  "businessSettings": {
+    "title": "Business Settings",
+    "businessName": "Business Name",
+    "phone": "Phone",
+    "address": "Address",
+    "currency": "Currency Code",
+    "currencySymbol": "Currency Symbol",
+    "timezone": "Timezone",
+    "invoicePrefix": "Invoice Prefix",
+    "invoiceStartingNumber": "Invoice Starting Number",
+    "dateFormat": "Date Format",
+    "save": "Save",
+    "saved": "Settings saved"
+  },
   "reports": {
     "title": "Business report",
     "daily": "Daily",
@@ -313,5 +329,33 @@
     "lowStock": "{wood} — only {cft} CFT available in stock.",
     "outOfStock": "{wood} is out of stock",
     "pendingOrder": "{customer}'s order is still pending"
+  },
+  "woodMeasurement": {
+    "title": "Wood Measurement",
+    "calculator": "Calculator",
+    "roundLog": "Round Log",
+    "sizeCut": "Size Cut",
+    "customerName": "Customer Name",
+    "girth": "Girth",
+    "girthUnit": "Unit",
+    "length": "Length (ft)",
+    "width": "Width (in)",
+    "thickness": "Thickness (in)",
+    "quantity": "Quantity",
+    "cftPreview": "CFT",
+    "addToNotebook": "Add to Notebook",
+    "itemAdded": "Item added",
+    "enterCustomerFirst": "Enter a customer name first",
+    "notebook": "Active Measurements",
+    "noOpenGroups": "No active measurements yet",
+    "closeAccount": "Close Account",
+    "confirmClose": "Confirm",
+    "closed": "Measurement closed",
+    "ratePerCFT": "Rate per CFT",
+    "paidAmount": "Paid Amount",
+    "history": "Measurement History",
+    "noHistory": "No completed measurements yet",
+    "downloadSlip": "Download Slip",
+    "reopen": "Reopen"
   }
 }

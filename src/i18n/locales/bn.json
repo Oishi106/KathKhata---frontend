@@ -19,6 +19,7 @@
   },
 "nav": {
     "dashboard": "ড্যাশবোর্ড",
+    "woodMeasurement": "কাঠের হিসাব",
     "woodInventory": "কাঠের মজুদ",
     "suppliers": "সরবরাহকারী",
     "purchases": "ক্রয়",
@@ -265,6 +266,21 @@
     "viewPayroll": "পে-রোল দেখুন"
   },
 
+  "businessSettings": {
+    "title": "ব্যবসার সেটিংস",
+    "businessName": "ব্যবসার নাম",
+    "phone": "ফোন নম্বর",
+    "address": "ঠিকানা",
+    "currency": "কারেন্সি কোড",
+    "currencySymbol": "কারেন্সি চিহ্ন",
+    "timezone": "টাইমজোন",
+    "invoicePrefix": "ইনভয়েস প্রিফিক্স",
+    "invoiceStartingNumber": "ইনভয়েসের শুরুর নম্বর",
+    "dateFormat": "তারিখের ফরম্যাট",
+    "save": "সংরক্ষণ করুন",
+    "saved": "সেটিংস সংরক্ষিত হয়েছে"
+  },
+
   "reports": {
     "title": "ব্যবসায়িক রিপোর্ট",
     "daily": "দৈনিক",
@@ -314,5 +330,33 @@
     "lowStock": "{wood} — মাত্র {cft} সিএফটি মজুদ আছে",
     "outOfStock": "{wood} মজুদ শেষ হয়ে গেছে",
     "pendingOrder": "{customer} এর অর্ডার এখনো চলমান আছে"
+  },
+  "woodMeasurement": {
+    "title": "কাঠের হিসাব",
+    "calculator": "ক্যালকুলেটর",
+    "roundLog": "গোল কাঠ",
+    "sizeCut": "সাইজ কাট",
+    "customerName": "গ্রাহকের নাম",
+    "girth": "বেয়ার",
+    "girthUnit": "একক",
+    "length": "আড়ে (ফুট)",
+    "width": "প্রস্থ (ইঞ্চি)",
+    "thickness": "পুরুত্ব (ইঞ্চি)",
+    "quantity": "পরিমাণ",
+    "cftPreview": "সিএফটি",
+    "addToNotebook": "খাতায় যোগ করুন",
+    "itemAdded": "যোগ হয়েছে",
+    "enterCustomerFirst": "প্রথমে গ্রাহকের নাম লিখুন",
+    "notebook": "চলমান হিসাব",
+    "noOpenGroups": "এখনো কোনো চলমান হিসাব নেই",
+    "closeAccount": "হিসাব শেষ করুন",
+    "confirmClose": "নিশ্চিত করুন",
+    "closed": "হিসাব শেষ হয়েছে",
+    "ratePerCFT": "প্রতি সিএফটি দর",
+    "paidAmount": "পরিশোধিত",
+    "history": "হিসাবের ইতিহাস",
+    "noHistory": "এখনো কোনো শেষ হওয়া হিসাব নেই",
+    "downloadSlip": "স্লিপ ডাউনলোড",
+    "reopen": "পুনরায় খুলুন"
   }
 }

@@ -19,7 +19,8 @@ import {
   ShoppingCart,
   Users,
   Cog,
-  UserCog
+  UserCog,
+  Ruler
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export function Sidebar({ locale }: { locale: string }) {
 
   const items = [
     { href: `/${locale}/dashboard`, label: t("dashboard"), icon: LayoutDashboard },
+    { href: `/${locale}/wood-measurement`, label: t("woodMeasurement") ?? "কাঠের হিসাব", icon: Ruler },
     { href: `/${locale}/wood-inventory`, label: t("woodInventory"), icon: Warehouse },
     { href: `/${locale}/suppliers`, label: t("suppliers") ?? "সরবরাহকারী", icon: Truck },
     { href: `/${locale}/purchases`, label: t("purchases") ?? "ক্রয়", icon: ShoppingCart },
