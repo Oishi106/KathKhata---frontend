@@ -17,7 +17,8 @@ import {
   LogOut,
   Truck,
   ShoppingCart,
-  Users
+  Users,
+  Cog
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function Sidebar({ locale }: { locale: string }) {
     { href: `/${locale}/suppliers`, label: t("suppliers") ?? "সরবরাহকারী", icon: Truck },
     { href: `/${locale}/purchases`, label: t("purchases") ?? "ক্রয়", icon: ShoppingCart },
     { href: `/${locale}/customers`, label: t("customers") ?? "গ্রাহক", icon: Users },
+    { href: `/${locale}/machines`, label: t("machines") ?? "মেশিন", icon: Cog },
     { href: `/${locale}/cutting-orders`, label: t("cuttingOrders"), icon: Scissors },
     { href: `/${locale}/product-cost-calculator`, label: t("costCalculator"), icon: Calculator },
     { href: `/${locale}/expenses`, label: t("expenses"), icon: Receipt },
@@ -63,7 +65,7 @@ export function Sidebar({ locale }: { locale: string }) {
         <div className="rounded-xl bg-forest-600 p-2">
           <TreePine className="h-6 w-6 text-white" />
         </div>
-        <span className="font-bold text-lg text-wood-900 dark:text-cream-50">খাতখাতা</span>
+        <span className="font-bold text-lg text-wood-900 dark:text-cream-50">কাঠখাতা</span>
       </div>
 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">

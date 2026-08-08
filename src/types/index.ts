@@ -59,6 +59,34 @@ export interface Sale {
   date: string;
 }
 
+export interface MeasurementItem {
+  _id: string;
+  mode: "round_log" | "size_cut";
+  girth?: number;
+  girthUnit?: "feet" | "inch";
+  length?: number;
+  width?: number;
+  thickness?: number;
+  quantity: number;
+  cft: number;
+  ruleUsed: string;
+}
+
+export interface Measurement {
+  _id: string;
+  slipNumber: string;
+  customerName: string;
+  operator?: string;
+  items: MeasurementItem[];
+  totalCFT: number;
+  ratePerCFT: number;
+  totalPrice: number;
+  paidAmount: number;
+  dueAmount: number;
+  status: "open" | "closed";
+  createdAt: string;
+}
+
 export interface Supplier {
   _id: string;
   name: string;
@@ -112,6 +140,31 @@ export interface Customer {
   paymentHistory?: CustomerPaymentRecord[];
   notes?: string;
   status: "active" | "inactive";
+  createdAt: string;
+}
+
+export interface MaintenanceRecord {
+  date: string;
+  type: "routine" | "repair";
+  cost: number;
+  description?: string;
+  performedBy?: string;
+}
+
+export interface Machine {
+  _id: string;
+  name: string;
+  type?: string;
+  modelNumber?: string;
+  purchaseDate?: string;
+  purchasePrice?: number;
+  location?: string;
+  status: "operational" | "under_maintenance" | "out_of_order";
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  maintenanceHistory?: MaintenanceRecord[];
+  totalMaintenanceCost: number;
+  notes?: string;
   createdAt: string;
 }
 

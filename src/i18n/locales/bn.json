@@ -23,6 +23,7 @@
     "suppliers": "সরবরাহকারী",
     "purchases": "ক্রয়",
     "customers": "গ্রাহক",
+    "machines": "মেশিন",
     "cuttingOrders": "কাটিং অর্ডার",
     "costCalculator": "খরচ ক্যালকুলেটর",
     "expenses": "খরচ",
@@ -167,6 +168,35 @@
     "recordPayment": "পেমেন্ট রেকর্ড করুন",
     "searchPlaceholder": "নাম, ফোন নম্বর খুঁজুন..."
   },
+
+  "machines": {
+    "title": "মেশিন",
+    "addMachine": "মেশিন যোগ করুন",
+    "name": "মেশিনের নাম",
+    "type": "ধরন",
+    "modelNumber": "মডেল নম্বর",
+    "purchaseDate": "ক্রয়ের তারিখ",
+    "purchasePrice": "ক্রয় মূল্য",
+    "location": "অবস্থান",
+    "status": "অবস্থা",
+    "operational": "চালু আছে",
+    "underMaintenance": "মেরামতে আছে",
+    "outOfOrder": "বিকল",
+    "lastMaintenanceDate": "সর্বশেষ মেইনটেন্যান্স",
+    "nextMaintenanceDate": "পরবর্তী মেইনটেন্যান্স",
+    "totalMaintenanceCost": "মোট মেরামত খরচ",
+    "addMaintenance": "মেইনটেন্যান্স যোগ করুন",
+    "maintenanceType": "মেইনটেন্যান্সের ধরন",
+    "routine": "নিয়মিত সার্ভিসিং",
+    "repair": "মেরামত",
+    "cost": "খরচ",
+    "description": "বিবরণ",
+    "performedBy": "কে করেছে",
+    "notes": "মন্তব্য",
+    "totalMachines": "মোট মেশিন",
+    "searchPlaceholder": "নাম, ধরন, মডেল খুঁজুন..."
+  },
+
   "reports": {
     "title": "ব্যবসায়িক রিপোর্ট",
     "daily": "দৈনিক",
