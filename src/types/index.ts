@@ -168,6 +168,61 @@ export interface Machine {
   createdAt: string;
 }
 
+export interface AttendanceRecord {
+  date: string;
+  status: "present" | "absent" | "half_day" | "leave";
+  overtimeHours: number;
+}
+
+export interface EmployeePaymentRecord {
+  date: string;
+  type: "advance" | "bonus" | "salary" | "deduction";
+  amount: number;
+  note?: string;
+}
+
+export interface Employee {
+  _id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  designation?: string;
+  salaryType: "daily" | "weekly" | "monthly";
+  salaryAmount: number;
+  overtimeRatePerHour?: number;
+  joiningDate: string;
+  status: "active" | "inactive";
+  advanceBalance: number;
+  attendanceHistory?: AttendanceRecord[];
+  paymentHistory?: EmployeePaymentRecord[];
+  notes?: string;
+  createdAt: string;
+}
+
+export interface Payroll {
+  _id: string;
+  employee: string | Employee;
+  month: number;
+  year: number;
+  presentDays: number;
+  halfDays: number;
+  absentDays: number;
+  leaveDays: number;
+  overtimeHours: number;
+  basePay: number;
+  overtimePay: number;
+  bonusTotal: number;
+  deductionTotal: number;
+  advanceDeducted: number;
+  calculatedTotal: number;
+  manualAdjustment: number;
+  manualAdjustmentNote?: string;
+  netPayable: number;
+  status: "draft" | "paid";
+  paidDate?: string;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   todayRevenue: number;
   todayExpense: number;

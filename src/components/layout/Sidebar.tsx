@@ -18,7 +18,8 @@ import {
   Truck,
   ShoppingCart,
   Users,
-  Cog
+  Cog,
+  UserCog
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export function Sidebar({ locale }: { locale: string }) {
     { href: `/${locale}/purchases`, label: t("purchases") ?? "ক্রয়", icon: ShoppingCart },
     { href: `/${locale}/customers`, label: t("customers") ?? "গ্রাহক", icon: Users },
     { href: `/${locale}/machines`, label: t("machines") ?? "মেশিন", icon: Cog },
+    { href: `/${locale}/employees`, label: t("employees") ?? "কর্মচারী", icon: UserCog },
     { href: `/${locale}/cutting-orders`, label: t("cuttingOrders"), icon: Scissors },
     { href: `/${locale}/product-cost-calculator`, label: t("costCalculator"), icon: Calculator },
     { href: `/${locale}/expenses`, label: t("expenses"), icon: Receipt },
