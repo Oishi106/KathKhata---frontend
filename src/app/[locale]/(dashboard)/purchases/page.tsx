@@ -10,6 +10,8 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { VoiceEntryButton } from "@/components/shared/VoiceEntryButton";
+import type { VoiceFieldSpec } from "@/hooks/useVoiceEntry";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Purchase, Supplier } from "@/types";
@@ -29,6 +31,29 @@ const emptyForm = {
   paymentMethod: "",
   notes: ""
 };
+
+const purchaseVoiceFields: VoiceFieldSpec[] = [
+  { name: "supplierName", type: "string", description: "সরবরাহকারীর নাম" },
+  { name: "woodType", type: "string", description: "কাঠের ধরন (যেমন গামারি, মেহগনি, সেগুন)" },
+  { name: "totalCFT", type: "number", description: "মোট সিএফটি", keywords: ["সিএফটি", "ঘনফুট"] },
+  {
+    name: "purchasePrice",
+    type: "number",
+    description: "কাঠের মূল্য টাকায়",
+    keywords: ["দাম", "মূল্য", "টাকায়", "কিনেছি", "কিনলাম"]
+  },
+  { name: "transportCost", type: "number", description: "পরিবহন খরচ", keywords: ["পরিবহন", "গাড়িভাড়া", "ভাড়া"] },
+  { name: "loadingCost", type: "number", description: "লোডিং খরচ", keywords: ["লোডিং", "তোলা"] },
+  { name: "unloadingCost", type: "number", description: "আনলোডিং খরচ", keywords: ["আনলোডিং", "নামানো"] },
+  { name: "otherExpenses", type: "number", description: "অন্যান্য খরচ", keywords: ["অন্যান্য", "বাড়তি"] },
+  {
+    name: "paidAmount",
+    type: "number",
+    description: "পরিশোধিত পরিমাণ",
+    keywords: ["পরিশোধ", "দিয়েছি", "দিছি", "জমা"]
+  },
+  { name: "notes", type: "string", description: "কোনো বাড়তি মন্তব্য" }
+];
 
 export default function PurchasesPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -101,6 +126,33 @@ export default function PurchasesPage() {
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const handleVoiceResult = (result: Record<string, string | number | null>) => {
+    let matchedSupplierId = "";
+    if (result.supplierName && suppliers) {
+      const spoken = String(result.supplierName).toLowerCase().trim();
+      const match = suppliers.find(
+        (s) => s.name.toLowerCase().includes(spoken) || spoken.includes(s.name.toLowerCase())
+      );
+      if (match) matchedSupplierId = match._id;
+    }
+
+    setForm((f) => ({
+      ...f,
+      supplier: matchedSupplierId || f.supplier,
+      woodType: result.woodType ? String(result.woodType) : f.woodType,
+      totalCFT: result.totalCFT != null ? String(result.totalCFT) : f.totalCFT,
+      purchasePrice: result.purchasePrice != null ? String(result.purchasePrice) : f.purchasePrice,
+      transportCost: result.transportCost != null ? String(result.transportCost) : f.transportCost,
+      loadingCost: result.loadingCost != null ? String(result.loadingCost) : f.loadingCost,
+      unloadingCost: result.unloadingCost != null ? String(result.unloadingCost) : f.unloadingCost,
+      otherExpenses: result.otherExpenses != null ? String(result.otherExpenses) : f.otherExpenses,
+      paidAmount: result.paidAmount != null ? String(result.paidAmount) : f.paidAmount,
+      notes: result.notes ? String(result.notes) : f.notes
+    }));
+
+    setShowForm(true);
+  };
+
   const downloadInvoice = async (id: string) => {
     try {
       const res = await api.get(`/purchases/${id}/invoice`, { responseType: "blob" });
@@ -151,10 +203,13 @@ export default function PurchasesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50">{t("title")}</h1>
-        <Button onClick={() => setShowForm((s) => !s)}>
-          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          {showForm ? "Cancel" : t("addPurchase")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <VoiceEntryButton fields={purchaseVoiceFields} language={lang} onResult={handleVoiceResult} />
+          <Button onClick={() => setShowForm((s) => !s)}>
+            {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {showForm ? "Cancel" : t("addPurchase")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -201,7 +256,7 @@ export default function PurchasesPage() {
               <label className="block text-sm font-medium mb-1">{t("totalCFT")}</label>
               <input type="number" required min={0} step="0.01" className="input-field" value={form.totalCFT} onChange={update("totalCFT")} />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">{t("purchasePrice")}</label>
               <input type="number" required min={0} className="input-field" value={form.purchasePrice} onChange={update("purchasePrice")} />
