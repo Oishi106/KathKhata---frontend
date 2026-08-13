@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { VoiceEntryButton } from "@/components/shared/VoiceEntryButton";
+import type { VoiceFieldSpec } from "@/hooks/useVoiceEntry";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Expense } from "@/types";
@@ -22,12 +24,40 @@ const categoryLabels: Record<string, string> = {
   miscellaneous: "বিবিধ"
 };
 
+// প্রতিটা ক্যাটাগরির জন্য সম্ভাব্য কথ্য প্রতিশব্দ — AI যা-ই বলুক, এই তালিকায় মিলিয়ে সঠিক enum বের করা হবে
+const categorySynonyms: Record<string, string[]> = {
+  salary: ["বেতন", "মাইনে", "সেলারি"],
+  electricity: ["বিদ্যুৎ", "কারেন্ট", "ইলেকট্রিক", "লাইট বিল"],
+  transport: ["পরিবহন", "ভাড়া", "গাড়িভাড়া", "যাতায়াত"],
+  machine_repair: ["মেশিন", "মেরামত", "সারাই", "রিপেয়ার"],
+  fuel: ["জ্বালানি", "তেল", "ডিজেল", "পেট্রোল", "গ্যাস"],
+  miscellaneous: ["বিবিধ", "অন্যান্য"]
+};
+
 const emptyForm = {
   category: "miscellaneous",
   amount: "",
   description: "",
   date: new Date().toISOString().slice(0, 10)
 };
+
+const expenseVoiceFields: VoiceFieldSpec[] = [
+  {
+    name: "category",
+    type: "string",
+    description: "খরচের ধরন — বেতন, বিদ্যুৎ, পরিবহন, মেশিন মেরামত, জ্বালানি, অথবা বিবিধ এর মধ্যে যেটা মানানসই"
+  },
+  { name: "amount", type: "number", description: "টাকার পরিমাণ", keywords: ["টাকা", "খরচ", "দিয়েছি", "দিছি"] },
+  { name: "description", type: "string", description: "খরচের সংক্ষিপ্ত বিবরণ" }
+];
+
+function matchCategory(spokenText: string): string | null {
+  const lower = spokenText.toLowerCase();
+  for (const [key, synonyms] of Object.entries(categorySynonyms)) {
+    if (synonyms.some((s) => lower.includes(s.toLowerCase()))) return key;
+  }
+  return null;
+}
 
 export default function ExpensesPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -67,6 +97,18 @@ export default function ExpensesPage() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const handleVoiceResult = (result: Record<string, string | number | null>) => {
+    const matchedCategory = result.category ? matchCategory(String(result.category)) : null;
+
+    setForm((f) => ({
+      ...f,
+      category: matchedCategory ?? f.category,
+      amount: result.amount != null ? String(result.amount) : f.amount,
+      description: result.description ? String(result.description) : f.description
+    }));
+    setShowForm(true);
+  };
+
   const columns: Column<Expense>[] = [
     { header: "Category", accessor: (r) => categoryLabels[r.category] ?? r.category },
     { header: "Amount", accessor: (r) => formatCurrency(r.amount, lang) },
@@ -78,10 +120,13 @@ export default function ExpensesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50">{t("expenses")}</h1>
-        <Button onClick={() => setShowForm((s) => !s)}>
-          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          {showForm ? "Cancel" : "Add Expense"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <VoiceEntryButton fields={expenseVoiceFields} language={lang} onResult={handleVoiceResult} />
+          <Button onClick={() => setShowForm((s) => !s)}>
+            {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {showForm ? "Cancel" : "Add Expense"}
+          </Button>
+        </div>
       </div>
 
       {showForm && (

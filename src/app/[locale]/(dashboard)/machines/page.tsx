@@ -10,6 +10,8 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { VoiceEntryButton } from "@/components/shared/VoiceEntryButton";
+import type { VoiceFieldSpec } from "@/hooks/useVoiceEntry";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Machine } from "@/types";
@@ -31,6 +33,20 @@ const emptyMaintenanceForm = {
   performedBy: "",
   nextMaintenanceDate: ""
 };
+
+const machineVoiceFields: VoiceFieldSpec[] = [
+  { name: "name", type: "string", description: "মেশিনের নাম" },
+  { name: "type", type: "string", description: "মেশিনের ধরন (যেমন করাত মেশিন, প্লানার)" },
+  { name: "modelNumber", type: "string", description: "মডেল নম্বর (থাকলে)" },
+  { name: "purchasePrice", type: "number", description: "ক্রয় মূল্য টাকায়", keywords: ["দাম", "মূল্য", "টাকায়", "কিনেছি"] },
+  { name: "location", type: "string", description: "মেশিন কোথায় রাখা আছে" }
+];
+
+const maintenanceVoiceFields: VoiceFieldSpec[] = [
+  { name: "cost", type: "number", description: "মেরামত/সার্ভিসিং খরচ টাকায়", keywords: ["খরচ", "টাকা", "দিয়েছি"] },
+  { name: "performedBy", type: "string", description: "কে মেরামত করেছে (মিস্ত্রি/দোকানের নাম)" },
+  { name: "description", type: "string", description: "কী মেরামত করা হয়েছে তার বিবরণ" }
+];
 
 export default function MachinesPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -119,6 +135,27 @@ export default function MachinesPage() {
     (key: keyof typeof maintenanceForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setMaintenanceForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const handleVoiceResult = (result: Record<string, string | number | null>) => {
+    setForm((f) => ({
+      ...f,
+      name: result.name ? String(result.name) : f.name,
+      type: result.type ? String(result.type) : f.type,
+      modelNumber: result.modelNumber ? String(result.modelNumber) : f.modelNumber,
+      purchasePrice: result.purchasePrice != null ? String(result.purchasePrice) : f.purchasePrice,
+      location: result.location ? String(result.location) : f.location
+    }));
+    setShowForm(true);
+  };
+
+  const handleMaintenanceVoiceResult = (result: Record<string, string | number | null>) => {
+    setMaintenanceForm((f) => ({
+      ...f,
+      cost: result.cost != null ? String(result.cost) : f.cost,
+      performedBy: result.performedBy ? String(result.performedBy) : f.performedBy,
+      description: result.description ? String(result.description) : f.description
+    }));
+  };
+
   const statusColors: Record<Machine["status"], string> = {
     operational: "bg-forest-100 text-forest-700 dark:bg-forest-800 dark:text-forest-200",
     under_maintenance: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
@@ -179,10 +216,13 @@ export default function MachinesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50">{t("title")}</h1>
-        <Button onClick={() => setShowForm((s) => !s)}>
-          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          {showForm ? "Cancel" : t("addMachine")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <VoiceEntryButton fields={machineVoiceFields} language={lang} onResult={handleVoiceResult} />
+          <Button onClick={() => setShowForm((s) => !s)}>
+            {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {showForm ? "Cancel" : t("addMachine")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -256,6 +296,13 @@ export default function MachinesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="card w-full max-w-md">
             <CardHeader title={`${t("addMaintenance")} — ${maintenanceFor.name}`} />
+            <div className="mb-4">
+              <VoiceEntryButton
+                fields={maintenanceVoiceFields}
+                language={lang}
+                onResult={handleMaintenanceVoiceResult}
+              />
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();

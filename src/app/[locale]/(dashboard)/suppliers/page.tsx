@@ -10,6 +10,8 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { VoiceEntryButton } from "@/components/shared/VoiceEntryButton";
+import type { VoiceFieldSpec } from "@/hooks/useVoiceEntry";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import type { Supplier } from "@/types";
@@ -23,6 +25,13 @@ const emptyForm = {
   address: "",
   notes: ""
 };
+
+const supplierVoiceFields: VoiceFieldSpec[] = [
+  { name: "name", type: "string", description: "সরবরাহকারীর নাম" },
+  { name: "companyName", type: "string", description: "প্রতিষ্ঠান/ব্যবসার নাম (থাকলে)" },
+  { name: "phone", type: "string", description: "ফোন নম্বর (১১ ডিজিট, যেমন 01712345678)" },
+  { name: "address", type: "string", description: "ঠিকানা" }
+];
 
 export default function SuppliersPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -74,6 +83,17 @@ export default function SuppliersPage() {
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  const handleVoiceResult = (result: Record<string, string | number | null>) => {
+    setForm((f) => ({
+      ...f,
+      name: result.name ? String(result.name) : f.name,
+      companyName: result.companyName ? String(result.companyName) : f.companyName,
+      phone: result.phone ? String(result.phone) : f.phone,
+      address: result.address ? String(result.address) : f.address
+    }));
+    setShowForm(true);
+  };
+
   const columns: Column<Supplier>[] = [
     { header: t("name"), accessor: (r) => <span className="font-medium">{r.name}</span> },
     { header: t("companyName"), accessor: (r) => r.companyName ?? "-" },
@@ -118,10 +138,13 @@ export default function SuppliersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50">{t("title")}</h1>
-        <Button onClick={() => setShowForm((s) => !s)}>
-          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          {showForm ? "Cancel" : t("addSupplier")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <VoiceEntryButton fields={supplierVoiceFields} language={lang} onResult={handleVoiceResult} />
+          <Button onClick={() => setShowForm((s) => !s)}>
+            {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {showForm ? "Cancel" : t("addSupplier")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -4,12 +4,14 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, X, CalendarCheck, Wallet, Users, UserCheck, FileText, History  } from "lucide-react";
+import { Plus, Search, X, CalendarCheck, Wallet, Users, UserCheck, FileText, History } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { VoiceEntryButton } from "@/components/shared/VoiceEntryButton";
+import type { VoiceFieldSpec } from "@/hooks/useVoiceEntry";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Employee, Payroll } from "@/types";
@@ -41,6 +43,55 @@ const emptyPaymentForm = {
 const months = [
   "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
   "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+];
+
+// enum-ভিত্তিক ফিল্ডের জন্য কথ্য প্রতিশব্দ তালিকা — AI যা বলুক, এখানে মিলিয়ে সঠিক value বের করা হবে
+const salaryTypeSynonyms: Record<string, string[]> = {
+  daily: ["দৈনিক", "প্রতিদিন", "রোজ"],
+  weekly: ["সাপ্তাহিক", "সপ্তাহ"],
+  monthly: ["মাসিক", "মাস"]
+};
+
+const attendanceStatusSynonyms: Record<string, string[]> = {
+  present: ["উপস্থিত", "এসেছে", "কাজে আছে"],
+  absent: ["অনুপস্থিত", "আসেনি", "কামাই"],
+  half_day: ["অর্ধ দিবস", "অর্ধেক দিন", "হাফ ডে"],
+  leave: ["ছুটি", "ছুটিতে"]
+};
+
+const paymentTypeSynonyms: Record<string, string[]> = {
+  advance: ["অগ্রিম দিয়েছি", "অগ্রিম দিলাম", "অগ্রিম"],
+  advance_repayment: ["অগ্রিম শোধ", "শোধ করেছে", "ফেরত দিয়েছে"],
+  bonus: ["বোনাস", "বকশিশ", "ঈদ বোনাস"],
+  deduction: ["কর্তন", "কেটেছি", "বাদ দিয়েছি"]
+};
+
+function matchEnum(spokenText: string, synonymMap: Record<string, string[]>): string | null {
+  const lower = spokenText.toLowerCase();
+  for (const [key, synonyms] of Object.entries(synonymMap)) {
+    if (synonyms.some((s) => lower.includes(s.toLowerCase()))) return key;
+  }
+  return null;
+}
+
+const employeeVoiceFields: VoiceFieldSpec[] = [
+  { name: "name", type: "string", description: "কর্মচারীর নাম" },
+  { name: "phone", type: "string", description: "ফোন নম্বর (১১ ডিজিট)" },
+  { name: "designation", type: "string", description: "পদবি (যেমন হেড মিস্ত্রি, সহকারী)" },
+  { name: "salaryType", type: "string", description: "বেতনের ধরন — দৈনিক, সাপ্তাহিক, নাকি মাসিক" },
+  { name: "salaryAmount", type: "number", description: "বেতনের পরিমাণ", keywords: ["বেতন", "টাকা", "মাইনে"] },
+  { name: "address", type: "string", description: "ঠিকানা" }
+];
+
+const attendanceVoiceFields: VoiceFieldSpec[] = [
+  { name: "status", type: "string", description: "উপস্থিতি — উপস্থিত, অনুপস্থিত, অর্ধ দিবস, নাকি ছুটি" },
+  { name: "overtimeHours", type: "number", description: "ওভারটাইম কত ঘণ্টা", keywords: ["ওভারটাইম", "ঘণ্টা", "অতিরিক্ত"] }
+];
+
+const paymentVoiceFields: VoiceFieldSpec[] = [
+  { name: "type", type: "string", description: "লেনদেনের ধরন — অগ্রিম দিয়েছি, অগ্রিম শোধ, বোনাস, নাকি কর্তন" },
+  { name: "amount", type: "number", description: "টাকার পরিমাণ", keywords: ["টাকা", "দিয়েছি", "দিছি"] },
+  { name: "note", type: "string", description: "কোনো বাড়তি মন্তব্য" }
 ];
 
 export default function EmployeesPage() {
@@ -172,7 +223,7 @@ export default function EmployeesPage() {
     onError: (err: any) => toast.error(err?.response?.data?.message ?? "Failed to adjust")
   });
 
-const confirmPayMutation = useMutation({
+  const confirmPayMutation = useMutation({
     mutationFn: async () =>
       (await api.post<{ data: Payroll }>(`/payroll/${activePayroll?._id}/confirm-pay`)).data.data,
     onSuccess: (payroll) => {
@@ -186,6 +237,42 @@ const confirmPayMutation = useMutation({
 
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleEmployeeVoiceResult = (result: Record<string, string | number | null>) => {
+    const matchedSalaryType = result.salaryType ? matchEnum(String(result.salaryType), salaryTypeSynonyms) : null;
+
+    setForm((f) => ({
+      ...f,
+      name: result.name ? String(result.name) : f.name,
+      phone: result.phone ? String(result.phone) : f.phone,
+      designation: result.designation ? String(result.designation) : f.designation,
+      salaryType: (matchedSalaryType as typeof f.salaryType) ?? f.salaryType,
+      salaryAmount: result.salaryAmount != null ? String(result.salaryAmount) : f.salaryAmount,
+      address: result.address ? String(result.address) : f.address
+    }));
+    setShowForm(true);
+  };
+
+  const handleAttendanceVoiceResult = (result: Record<string, string | number | null>) => {
+    const matchedStatus = result.status ? matchEnum(String(result.status), attendanceStatusSynonyms) : null;
+
+    setAttendanceForm((f) => ({
+      ...f,
+      status: (matchedStatus as typeof f.status) ?? f.status,
+      overtimeHours: result.overtimeHours != null ? String(result.overtimeHours) : f.overtimeHours
+    }));
+  };
+
+  const handlePaymentVoiceResult = (result: Record<string, string | number | null>) => {
+    const matchedType = result.type ? matchEnum(String(result.type), paymentTypeSynonyms) : null;
+
+    setPaymentForm((f) => ({
+      ...f,
+      type: (matchedType as typeof f.type) ?? f.type,
+      amount: result.amount != null ? String(result.amount) : f.amount,
+      note: result.note ? String(result.note) : f.note
+    }));
+  };
 
   const columns: Column<Employee>[] = [
     {
@@ -214,7 +301,7 @@ const confirmPayMutation = useMutation({
         </span>
       )
     },
-{
+    {
       header: "",
       accessor: (r) => (
         <div className="flex flex-wrap gap-3">
@@ -248,16 +335,18 @@ const confirmPayMutation = useMutation({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50">{t("title")}</h1>
-        <Button onClick={() => setShowForm((s) => !s)}>
-          {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          {showForm ? "Cancel" : t("addEmployee")}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <VoiceEntryButton fields={employeeVoiceFields} language={lang} onResult={handleEmployeeVoiceResult} />
+          <Button onClick={() => setShowForm((s) => !s)}>
+            {showForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            {showForm ? "Cancel" : t("addEmployee")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label={t("totalEmployees")} value={String(stats?.totalEmployees ?? 0)} icon={Users} accent="wood" />
         <StatCard label={t("active")} value={String(stats?.active ?? 0)} icon={UserCheck} accent="forest" />
-        
       </div>
 
       {showForm && (
@@ -343,6 +432,13 @@ const confirmPayMutation = useMutation({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="card w-full max-w-sm">
             <CardHeader title={`${t("markAttendance")} — ${attendanceFor.name}`} />
+            <div className="mb-4">
+              <VoiceEntryButton
+                fields={attendanceVoiceFields}
+                language={lang}
+                onResult={handleAttendanceVoiceResult}
+              />
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -400,6 +496,9 @@ const confirmPayMutation = useMutation({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="card w-full max-w-sm">
             <CardHeader title={`${t("recordPayment")} — ${paymentFor.name}`} />
+            <div className="mb-4">
+              <VoiceEntryButton fields={paymentVoiceFields} language={lang} onResult={handlePaymentVoiceResult} />
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -409,7 +508,7 @@ const confirmPayMutation = useMutation({
             >
               <div>
                 <label className="block text-sm font-medium mb-1">{t("paymentType")}</label>
-               <select
+                <select
                   className="input-field"
                   value={paymentForm.type}
                   onChange={(e) => setPaymentForm((f) => ({ ...f, type: e.target.value as any }))}
@@ -581,7 +680,7 @@ const confirmPayMutation = useMutation({
                   </span>
                 </div>
 
-{activePayroll.status === "paid" ? (
+                {activePayroll.status === "paid" ? (
                   <div className="space-y-2">
                     <button
                       disabled

@@ -28,7 +28,7 @@ export function VoiceEntryButton({ fields, language = "bn", onResult, label }: V
     language,
     onResult: (result, rawText) => {
       toast.success(
-        language === "bn" ? "ভয়েস থেকে ফর্ম পূরণ হয়েছে, একবার যাচাই করুন" : "Form filled from voice, please review"
+        language === "bn" ? "ফর্ম পূরণ হয়েছে, একবার দেখে নিন" : "Form filled from voice, please review"
       );
       onResult(result, rawText);
     },
@@ -38,75 +38,86 @@ export function VoiceEntryButton({ fields, language = "bn", onResult, label }: V
   if (!isSupported) return null;
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex flex-col items-start gap-3 w-full sm:w-auto">
       {!reviewText && (
         <button
           type="button"
           onClick={isListening ? stop : start}
           disabled={isProcessing}
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-2xl px-5 py-3 text-base font-semibold transition-colors min-h-[52px] ${
             isListening
               ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 animate-pulse"
               : isProcessing
                 ? "bg-wood-100 text-wood-500 dark:bg-wood-700 dark:text-wood-300 cursor-wait"
-                : "bg-forest-100 text-forest-700 dark:bg-forest-800 dark:text-forest-200 hover:bg-forest-200 dark:hover:bg-forest-700"
+                : "bg-forest-600 text-white hover:bg-forest-700"
           }`}
         >
           {isProcessing ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {language === "bn" ? "বিশ্লেষণ হচ্ছে..." : "Analyzing..."}
+              <Loader2 className="h-5 w-5 animate-spin" />
+              {language === "bn" ? "বোঝার চেষ্টা হচ্ছে..." : "Analyzing..."}
             </>
           ) : isListening ? (
             <>
-              <MicOff className="h-4 w-4" />
+              <MicOff className="h-5 w-5" />
               {language === "bn" ? "থামান" : "Stop"}
             </>
           ) : (
             <>
-              <Mic className="h-4 w-4" />
-              {label ?? (language === "bn" ? "বলে পূরণ করুন" : "Fill by voice")}
+              <Mic className="h-5 w-5" />
+              {label ?? (language === "bn" ? "মুখে বলে দিন" : "Fill by voice")}
             </>
           )}
         </button>
       )}
 
-      {isListening && transcript && (
-        <p className="text-xs text-wood-500 dark:text-wood-400 italic max-w-md">"{transcript}"</p>
+      {isListening && (
+        <div className="w-full sm:w-96 rounded-2xl border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+            <p className="text-sm font-medium text-red-700 dark:text-red-300">
+              {language === "bn" ? "শোনা হচ্ছে... এখন বলুন" : "Listening... speak now"}
+            </p>
+          </div>
+          {transcript && (
+            <p className="text-lg text-wood-800 dark:text-cream-100 leading-relaxed">{transcript}</p>
+          )}
+        </div>
       )}
 
       {/* কথা বলা শেষে — টেক্সট যাচাই ও সংশোধনের বক্স */}
       {reviewText !== null && (
-        <div className="w-full max-w-md rounded-xl border border-wood-200 dark:border-wood-700 bg-white dark:bg-wood-800 p-3 space-y-2">
-          <p className="text-xs text-wood-500 dark:text-wood-400">
-            {language === "bn"
-              ? "যা শোনা গেছে — ভুল থাকলে ঠিক করে নিন:"
-              : "Here's what was heard — edit if needed:"}
+        <div className="w-full sm:w-96 rounded-2xl border-2 border-forest-200 dark:border-forest-700 bg-forest-50 dark:bg-wood-800 p-4 space-y-3">
+          <p className="text-base font-semibold text-wood-800 dark:text-cream-100">
+            {language === "bn" ? "🎤 আপনি যা বলেছেন:" : "🎤 What you said:"}
           </p>
           <textarea
             value={reviewText}
             onChange={(e) => setReviewText(e.target.value)}
-            rows={2}
-            className="input-field text-sm w-full resize-none"
+            rows={3}
+            className="w-full rounded-xl border-2 border-wood-200 dark:border-wood-600 bg-white dark:bg-wood-900 px-4 py-3 text-lg leading-relaxed text-wood-900 dark:text-cream-50 focus:border-forest-500 focus:outline-none resize-none"
           />
-          <div className="flex gap-2">
+          <p className="text-sm text-wood-500 dark:text-wood-400">
+            {language === "bn" ? "ভুল থাকলে এখানে ঠিক করে নিন" : "Edit if anything is wrong"}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               onClick={() => confirmAndAnalyze(reviewText)}
               disabled={isProcessing}
-              className="flex items-center gap-1 rounded-lg bg-forest-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-forest-700 disabled:opacity-60"
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-forest-600 text-white px-4 py-3 text-base font-semibold hover:bg-forest-700 disabled:opacity-60 min-h-[52px]"
             >
-              {isProcessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              {language === "bn" ? "বিশ্লেষণ করুন" : "Analyze"}
+              {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+              {language === "bn" ? "ঠিক আছে, ফর্মে বসান" : "Confirm & Fill"}
             </button>
             <button
               type="button"
               onClick={discardReview}
               disabled={isProcessing}
-              className="flex items-center gap-1 rounded-lg bg-wood-100 dark:bg-wood-700 text-wood-600 dark:text-wood-300 px-3 py-1.5 text-xs font-medium hover:bg-wood-200 dark:hover:bg-wood-600"
+              className="flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-wood-700 border-2 border-wood-200 dark:border-wood-600 text-wood-600 dark:text-wood-300 px-4 py-3 text-base font-semibold hover:bg-wood-50 dark:hover:bg-wood-600 min-h-[52px]"
             >
-              <X className="h-3.5 w-3.5" />
-              {language === "bn" ? "বাতিল" : "Discard"}
+              <X className="h-5 w-5" />
+              {language === "bn" ? "বাদ দিন" : "Discard"}
             </button>
           </div>
         </div>
