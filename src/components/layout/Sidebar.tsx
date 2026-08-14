@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -86,10 +87,8 @@ export function Sidebar({
         `}
       >
         <div className="flex items-center gap-2 px-6 mb-8">
-          <div className="rounded-xl bg-forest-600 p-2">
-            <TreePine className="h-6 w-6 text-white" />
-          </div>
-          <span className="font-bold text-lg text-wood-900 dark:text-cream-50">কাঠখাতা</span>
+          <Image src="/logo.png" alt="কাঠখাতা" width={60} height={60} className="rounded-full" />
+          <span className="font-bold text-xl text-wood-900 dark:text-cream-50">কাঠখাতা</span>
         </div>
 
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
