@@ -729,7 +729,7 @@ export default function WoodMeasurementPage() {
               </Button>
               <Button variant="secondary" className="flex-1" onClick={() => setReviewBlocks(null)}>
                 {lang === "bn" ? "বাতিল" : "Cancel"}
-              </Button>
+              </Button>    
             </div>
           </div>    
         </div>
