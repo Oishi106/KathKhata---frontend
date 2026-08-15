@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,15 +15,41 @@ import {
   Lock,
   Unlock,
   Search,
-  BookOpen
+  BookOpen,
+  Mic,
+  MicOff,
+  PenLine,
+  X,
+  Check,
+  Sparkles
 } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { toInches, breakdownFromInches, type LengthUnit } from "@/lib/unitConversion";
 import type { Measurement, MeasurementItem } from "@/types";
 
 type Mode = "round_log" | "size_cut";
+type InputMethod = "manual" | "voice";
+
+interface DimensionField {
+  value: string;
+  unit: LengthUnit;
+}
+
+const emptyField = (): DimensionField => ({ value: "", unit: "feet" });
+
+interface ReviewRow {
+  lengthFeet: number;
+  lengthInch: number;
+  girthInch: number;
+  quantity: number;
+}
+interface ReviewBlock {
+  customerName: string;
+  rows: ReviewRow[];
+}
 
 export default function WoodMeasurementPage() {
   const { locale } = useParams<{ locale: string }>();
@@ -32,12 +58,13 @@ export default function WoodMeasurementPage() {
   const queryClient = useQueryClient();
 
   const [mode, setMode] = useState<Mode>("round_log");
+  const [inputMethod, setInputMethod] = useState<InputMethod>("manual");
   const [customerName, setCustomerName] = useState("");
-  const [girth, setGirth] = useState("");
-  const [girthUnit, setGirthUnit] = useState<"feet" | "inch">("feet");
-  const [length, setLength] = useState("");
-  const [width, setWidth] = useState("");
-  const [thickness, setThickness] = useState("");
+
+  const [girth, setGirth] = useState<DimensionField>(emptyField());
+  const [length, setLength] = useState<DimensionField>(emptyField());
+  const [width, setWidth] = useState<DimensionField>(emptyField());
+  const [thickness, setThickness] = useState<DimensionField>(emptyField());
   const [quantity, setQuantity] = useState("1");
 
   const [historySearch, setHistorySearch] = useState("");
@@ -45,6 +72,90 @@ export default function WoodMeasurementPage() {
   const [closeRate, setCloseRate] = useState("");
   const [closePaid, setClosePaid] = useState("");
 
+  // ---- voice ----
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const shouldListenRef = useRef(false);
+  const [transcript, setTranscript] = useState("");
+  const [reviewBlocks, setReviewBlocks] = useState<ReviewBlock[] | null>(null);
+  const [lastResultGroupId, setLastResultGroupId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = "bn-BD";
+
+    recognition.onresult = (event: any) => {
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
+      }
+      if (finalText.trim()) setTranscript((prev) => (prev ? `${prev} ${finalText.trim()}` : finalText.trim()));
+    };
+    recognition.onerror = (e: any) => {
+      if (e.error !== "no-speech") {
+        shouldListenRef.current = false;
+        setIsListening(false);
+      }
+    };
+    recognition.onend = () => {
+      if (shouldListenRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          setIsListening(false);
+        }
+      } else setIsListening(false);
+    };
+    recognitionRef.current = recognition;
+    return () => {
+      shouldListenRef.current = false;
+      recognition.abort();
+    };
+  }, []);
+
+  const toggleVoice = () => {
+    if (!recognitionRef.current) {
+      toast.error(lang === "bn" ? "আপনার ব্রাউজার ভয়েস ইনপুট সাপোর্ট করে না।" : "Voice input not supported in this browser.");
+      return;
+    }
+    if (isListening) {
+      shouldListenRef.current = false;
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setTranscript("");
+      shouldListenRef.current = true;
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const parseMutation = useMutation({
+    mutationFn: async () => api.post("/wood-measurement/voice-parse", { transcript }),
+    onSuccess: (res: any) => {
+      const { blocks, warnings } = res.data.data;
+      if (warnings?.length) warnings.forEach((w: string) => toast.warning(w));
+      if (!blocks || blocks.length === 0) return;
+      setReviewBlocks(
+        blocks.map((b: any) => ({
+          customerName: b.customerName,
+          rows: b.rows.map((r: any) => ({
+            lengthFeet: r.lengthFeet ?? 0,
+            lengthInch: r.lengthInch ?? 0,
+            girthInch: r.girthInch ?? 0,
+            quantity: r.quantity ?? 1
+          }))
+        }))
+      );
+    },
+    onError: () => toast.error(lang === "bn" ? "ভয়েস থেকে মাপ বোঝা যায়নি। আবার বলুন অথবা নিজে লিখুন।" : "Couldn't understand the voice input.")
+  });
+
+  // ---- queries ----
   const { data: openGroups } = useQuery({
     queryKey: ["measurement-open-groups"],
     queryFn: async () => (await api.get<{ data: Measurement[] }>("/wood-measurement/groups/open")).data.data
@@ -53,76 +164,106 @@ export default function WoodMeasurementPage() {
   const { data: history } = useQuery({
     queryKey: ["measurement-history", historySearch],
     queryFn: async () =>
-      (
-        await api.get<{ data: Measurement[] }>("/wood-measurement/history", {
-          params: { search: historySearch }
-        })
-      ).data.data
+      (await api.get<{ data: Measurement[] }>("/wood-measurement/history", { params: { search: historySearch } })).data.data
   });
 
+  const lastResultGroup = useMemo(
+    () => openGroups?.find((g) => g._id === lastResultGroupId) ?? null,
+    [openGroups, lastResultGroupId]
+  );
+
+  // ---- manual live preview ----
+  const girthInches = toInches(Number(girth.value) || 0, girth.unit);
+  const lengthInches = toInches(Number(length.value) || 0, length.unit);
+  const widthInches = toInches(Number(width.value) || 0, width.unit);
+  const thicknessInches = toInches(Number(thickness.value) || 0, thickness.unit);
+
   const preview = useMemo(() => {
+    const q = Number(quantity) || 0;
     if (mode === "round_log") {
-      const g = Number(girth) || 0;
-      const l = Number(length) || 0;
-      const q = Number(quantity) || 0;
-      const cft = girthUnit === "feet" ? ((g * g * l) / 16) * q : ((l * g * g) / 2304) * q;
+      const lengthFeet = lengthInches / 12;
+      const cft = ((lengthFeet * girthInches * girthInches) / 2304) * q;
       return Math.round(cft * 100) / 100;
     }
-    const l = Number(length) || 0;
-    const w = Number(width) || 0;
-    const th = Number(thickness) || 0;
-    const q = Number(quantity) || 0;
-    return Math.round(((l * w * th * q) / 144) * 100) / 100;
-  }, [mode, girth, girthUnit, length, width, thickness, quantity]);
+    return Math.round(((lengthInches * widthInches * thicknessInches * q) / 1728) * 100) / 100;
+  }, [mode, girthInches, lengthInches, widthInches, thicknessInches, quantity]);
 
-  const resetItemInputs = () => {
-    setGirth("");
-    setLength("");
-    setWidth("");
-    setThickness("");
+  const resetInputs = () => {
+    setGirth(emptyField());
+    setLength(emptyField());
+    setWidth(emptyField());
+    setThickness(emptyField());
     setQuantity("1");
   };
 
-  const addItemMutation = useMutation({
+  const addManualMutation = useMutation({
     mutationFn: async () => {
       if (!customerName.trim()) throw new Error("NO_CUSTOMER");
-
-      const { data: groupRes } = await api.post("/wood-measurement/groups", {
-        customerName: customerName.trim()
-      });
+      const { data: groupRes } = await api.post("/wood-measurement/groups", { customerName: customerName.trim() });
       const groupId = groupRes.data._id;
 
       const payload =
         mode === "round_log"
           ? {
               mode: "round_log",
-              girth: Number(girth),
-              girthUnit,
-              length: Number(length),
+              girth: Math.round(girthInches * 100) / 100,
+              girthUnit: "inch",
+              length: Math.round((lengthInches / 12) * 100) / 100,
               quantity: Number(quantity)
             }
           : {
               mode: "size_cut",
-              length: Number(length),
-              width: Number(width),
-              thickness: Number(thickness),
+              length: Math.round(lengthInches * 100) / 100,
+              width: Math.round(widthInches * 100) / 100,
+              thickness: Math.round(thicknessInches * 100) / 100,
               quantity: Number(quantity)
             };
 
-      return api.post(`/wood-measurement/groups/${groupId}/items`, payload);
+      const res = await api.post(`/wood-measurement/groups/${groupId}/items`, payload);
+      return { groupId, res };
     },
-    onSuccess: () => {
-      toast.success(t("itemAdded") ?? "Item added");
+    onSuccess: ({ groupId }) => {
+      toast.success(t("itemAdded") ?? "যোগ হয়েছে");
+      setLastResultGroupId(groupId);
       queryClient.invalidateQueries({ queryKey: ["measurement-open-groups"] });
-      resetItemInputs();
+      resetInputs();
     },
     onError: (err: any) => {
-      if (err?.message === "NO_CUSTOMER") {
-        toast.error(t("enterCustomerFirst") ?? "Enter a customer name first");
-      } else {
-        toast.error(err?.response?.data?.message ?? "Failed to add item");
-      }
+      if (err?.message === "NO_CUSTOMER") toast.error(t("enterCustomerFirst") ?? "প্রথমে গ্রাহকের নাম লিখুন");
+      else toast.error(err?.response?.data?.message ?? "Failed to add item");
     }
+  });
+
+  const confirmReviewMutation = useMutation({
+    mutationFn: async () => {
+      if (!reviewBlocks) return;
+      let lastGroupId: string | null = null;
+      for (const block of reviewBlocks) {
+        if (block.rows.length === 0) continue;
+        const { data: groupRes } = await api.post("/wood-measurement/groups", { customerName: block.customerName });
+        const groupId = groupRes.data._id;
+        for (const row of block.rows) {
+          const totalLengthInches = row.lengthFeet * 12 + row.lengthInch;
+          await api.post(`/wood-measurement/groups/${groupId}/items`, {
+            mode: "round_log",
+            girth: row.girthInch,
+            girthUnit: "inch",
+            length: Math.round((totalLengthInches / 12) * 100) / 100,
+            quantity: row.quantity
+          });
+        }
+        lastGroupId = groupId;
+      }
+      return lastGroupId;
+    },
+    onSuccess: (groupId) => {
+      toast.success(lang === "bn" ? "খাতায় সংরক্ষিত হয়েছে" : "Saved to notebook");
+      if (groupId) setLastResultGroupId(groupId);
+      setReviewBlocks(null);
+      setTranscript("");
+      queryClient.invalidateQueries({ queryKey: ["measurement-open-groups"] });
+    },
+    onError: () => toast.error(lang === "bn" ? "সংরক্ষণ ব্যর্থ হয়েছে" : "Failed to save")
   });
 
   const removeItemMutation = useMutation({
@@ -138,7 +279,7 @@ export default function WoodMeasurementPage() {
         paidAmount: Number(closePaid) || 0
       }),
     onSuccess: () => {
-      toast.success(t("closed") ?? "Measurement closed");
+      toast.success(t("closed") ?? "হিসাব শেষ হয়েছে");
       queryClient.invalidateQueries({ queryKey: ["measurement-open-groups"] });
       queryClient.invalidateQueries({ queryKey: ["measurement-history"] });
       setClosingGroupId(null);
@@ -170,12 +311,80 @@ export default function WoodMeasurementPage() {
     if (item.mode === "round_log") {
       const unitLabel = item.girthUnit === "inch" ? (lang === "bn" ? "ইঞ্চি" : "in") : lang === "bn" ? "ফুট" : "ft";
       return lang === "bn"
-        ? `গোল কাঠ — বেয়ার ${item.girth} ${unitLabel}, আড়ে ${item.length} ফুট, ${item.quantity}টি`
+        ? `গোল কাঠ — পরিধি ${item.girth} ${unitLabel}, দৈর্ঘ্য ${item.length} ফুট, ${item.quantity}টি`
         : `Round log — girth ${item.girth} ${unitLabel}, length ${item.length} ft, qty ${item.quantity}`;
     }
     return lang === "bn"
       ? `সাইজ কাট — ${item.length}×${item.width}×${item.thickness} ইঞ্চি, ${item.quantity}টি`
       : `Size cut — ${item.length}×${item.width}×${item.thickness} in, qty ${item.quantity}`;
+  };
+
+  // ---- result card computations for the last-updated group ----
+  const resultStats = useMemo(() => {
+    if (!lastResultGroup) return null;
+    const totalQty = lastResultGroup.items.reduce((s, it) => s + it.quantity, 0) || 1;
+    const totalLengthInches = lastResultGroup.items.reduce((s, it) => {
+      const lenInches = (it.length ?? 0) * 12; // stored length is always in feet
+      return s + lenInches * it.quantity;
+    }, 0);
+    const avgLengthInches = totalLengthInches / totalQty;
+    return {
+      totalCFT: lastResultGroup.totalCFT,
+      avg: breakdownFromInches(avgLengthInches),
+      total: breakdownFromInches(totalLengthInches)
+    };
+  }, [lastResultGroup]);
+
+  const lengthLabel = (b: ReturnType<typeof breakdownFromInches>) =>
+    lang === "bn" ? `${b.feet} ফুট ${b.inches} ইঞ্চি ${b.points} পয়েন্ট` : `${b.feet} ft ${b.inches} in ${b.points} pt`;
+
+  const unitOptions: { value: LengthUnit; label: string }[] = [
+    { value: "feet", label: lang === "bn" ? "ফুট" : "Feet" },
+    { value: "inch", label: lang === "bn" ? "ইঞ্চি" : "Inch" },
+    { value: "cm", label: lang === "bn" ? "সেমি" : "Cm" },
+    { value: "point", label: lang === "bn" ? "পয়েন্ট" : "Point" }
+  ];
+
+  const DimensionInput = ({
+    label,
+    field,
+    setField
+  }: {
+    label: string;
+    field: DimensionField;
+    setField: (f: DimensionField) => void;
+  }) => {
+    const inches = toInches(Number(field.value) || 0, field.unit);
+    const b = breakdownFromInches(inches);
+    return (
+      <div>
+        <label className="block text-sm font-medium mb-1">{label}</label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            className="input-field"
+            value={field.value}
+            onChange={(e) => setField({ ...field, value: e.target.value })}
+          />
+          <select
+            className="input-field w-28 shrink-0"
+            value={field.unit}
+            onChange={(e) => setField({ ...field, unit: e.target.value as LengthUnit })}
+          >
+            {unitOptions.map((u) => (
+              <option key={u.value} value={u.value}>
+                {u.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {Number(field.value) > 0 && (
+          <p className="text-xs text-wood-400 mt-1">≈ {lengthLabel(b)} · {b.totalCm} cm</p>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -184,11 +393,11 @@ export default function WoodMeasurementPage() {
         <Ruler className="h-6 w-6 text-forest-600" /> {t("title") ?? "কাঠের হিসাব"}
       </h1>
 
-      {/* ---- Calculator card (always visible at top) ---- */}
+      {/* ---- Calculator card ---- */}
       <Card>
         <CardHeader title={t("calculator") ?? "ক্যালকুলেটর"} />
 
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-4">
           <button
             onClick={() => setMode("round_log")}
             className={cn(
@@ -209,73 +418,121 @@ export default function WoodMeasurementPage() {
           </button>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">{t("customerName") ?? "গ্রাহকের নাম"}</label>
-          <input
-            className="input-field text-lg"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder={lang === "bn" ? "যেমন: রহিম" : "e.g. Rahim"}
-          />
+        <div className="flex gap-2 mb-5">
+          <button
+            onClick={() => setInputMethod("voice")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border-2 transition-colors",
+              inputMethod === "voice" ? "border-forest-600 text-forest-700 bg-forest-50 dark:bg-forest-900/30" : "border-wood-100 dark:border-wood-700 text-wood-500"
+            )}
+          >
+            <Mic className="h-4 w-4" /> {lang === "bn" ? "🎤 AI দিয়ে মাপ দিন" : "🎤 Use AI Voice"}
+          </button>
+          <button
+            onClick={() => setInputMethod("manual")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border-2 transition-colors",
+              inputMethod === "manual" ? "border-forest-600 text-forest-700 bg-forest-50 dark:bg-forest-900/30" : "border-wood-100 dark:border-wood-700 text-wood-500"
+            )}
+          >
+            <PenLine className="h-4 w-4" /> {lang === "bn" ? "✍️ নিজে মাপ দিন" : "✍️ Manual Entry"}
+          </button>
         </div>
 
-        {mode === "round_log" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("girth") ?? "বেয়ার"}</label>
-              <input type="number" min={0} step="0.01" className="input-field" value={girth} onChange={(e) => setGirth(e.target.value)} />
+        {inputMethod === "manual" ? (
+          <>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">{t("customerName") ?? "গ্রাহকের নাম"}</label>
+              <input
+                className="input-field text-lg"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder={lang === "bn" ? "যেমন: রহিম" : "e.g. Rahim"}
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("girthUnit") ?? "একক"}</label>
-              <select className="input-field" value={girthUnit} onChange={(e) => setGirthUnit(e.target.value as "feet" | "inch")}>
-                <option value="feet">{lang === "bn" ? "ফুট" : "Feet"}</option>
-                <option value="inch">{lang === "bn" ? "ইঞ্চি" : "Inch"}</option>
-              </select>
+
+            {mode === "round_log" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <DimensionInput label={lang === "bn" ? "পরিধি" : "Girth"} field={girth} setField={setGirth} />
+                <DimensionInput label={lang === "bn" ? "দৈর্ঘ্য" : "Length"} field={length} setField={setLength} />
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t("quantity") ?? "পরিমাণ"}</label>
+                  <input type="number" min={1} className="input-field" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <DimensionInput label={lang === "bn" ? "দৈর্ঘ্য" : "Length"} field={length} setField={setLength} />
+                <DimensionInput label={lang === "bn" ? "প্রস্থ" : "Width"} field={width} setField={setWidth} />
+                <DimensionInput label={lang === "bn" ? "পুরুত্ব" : "Thickness"} field={thickness} setField={setThickness} />
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t("quantity") ?? "পরিমাণ"}</label>
+                  <input type="number" min={1} className="input-field" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 rounded-xl bg-forest-50 dark:bg-forest-900/30 p-5 flex items-center justify-between">
+              <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "সিএফটি"}</span>
+              <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("length") ?? "আড়ে (ফুট)"}</label>
-              <input type="number" min={0} step="0.01" className="input-field" value={length} onChange={(e) => setLength(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("quantity") ?? "পরিমাণ"}</label>
-              <input type="number" min={1} className="input-field" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-            </div>
-          </div>
+
+            <Button className="w-full mt-4" size="lg" onClick={() => addManualMutation.mutate()} loading={addManualMutation.isPending}>
+              <Plus className="h-5 w-5" /> {t("addToNotebook") ?? "খাতায় যোগ করুন"}
+            </Button>
+          </>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("length") ?? "দৈর্ঘ্য (ইঞ্চি)"}</label>
-              <input type="number" min={0} step="0.01" className="input-field" value={length} onChange={(e) => setLength(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("width") ?? "প্রস্থ (ইঞ্চি)"}</label>
-              <input type="number" min={0} step="0.01" className="input-field" value={width} onChange={(e) => setWidth(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("thickness") ?? "পুরুত্ব (ইঞ্চি)"}</label>
-              <input type="number" min={0} step="0.01" className="input-field" value={thickness} onChange={(e) => setThickness(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t("quantity") ?? "পরিমাণ"}</label>
-              <input type="number" min={1} className="input-field" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-            </div>
+          <div className="text-center py-6">
+            <button
+              onClick={toggleVoice}
+              className={cn(
+                "mx-auto h-24 w-24 rounded-full flex items-center justify-center transition-colors shadow-soft",
+                isListening ? "bg-red-500 text-white animate-pulse" : "bg-forest-600 text-white hover:bg-forest-700"
+              )}
+            >
+              {isListening ? <MicOff className="h-10 w-10" /> : <Mic className="h-10 w-10" />}
+            </button>
+            <p className="mt-3 text-sm text-wood-500">
+              {isListening
+                ? lang === "bn" ? "শুনছি... আবার চাপুন থামাতে" : "Listening... tap to stop"
+                : lang === "bn" ? "মাইকে চাপুন ও বলুন, যেমন: 'রহিমের কার্ড, দশ ফুট ছয় ইঞ্চির কাঠ দুইটা, রহিম শেষ'" : "Tap and speak naturally"}
+            </p>
+
+            {transcript && (
+              <div className="mt-4 rounded-xl bg-wood-50 dark:bg-wood-700 p-4 text-left text-sm text-wood-700 dark:text-cream-100">
+                {transcript}
+              </div>
+            )}
+
+            <Button
+              className="mt-4"
+              onClick={() => parseMutation.mutate()}
+              loading={parseMutation.isPending}
+              disabled={!transcript.trim()}
+            >
+              <Sparkles className="h-4 w-4" /> {lang === "bn" ? "মাপ বুঝুন" : "Understand measurements"}
+            </Button>
           </div>
         )}
-
-        <div className="mt-5 rounded-xl bg-forest-50 dark:bg-forest-900/30 p-5 flex items-center justify-between">
-          <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "সিএফটি"}</span>
-          <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
-        </div>
-
-        <Button
-          className="w-full mt-4"
-          size="lg"
-          onClick={() => addItemMutation.mutate()}
-          loading={addItemMutation.isPending}
-        >
-          <Plus className="h-5 w-5" /> {t("addToNotebook") ?? "খাতায় যোগ করুন"}
-        </Button>
       </Card>
+
+      {/* ---- Result cards for the last action ---- */}
+      {resultStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="bg-forest-600 text-white border-none text-center">
+            <p className="text-sm text-forest-100 mb-1">{lang === "bn" ? "মোট সেফটি" : "Total CFT"}</p>
+            <p className="text-3xl font-bold">{resultStats.totalCFT.toFixed(2)}</p>
+          </Card>
+          <Card className="text-center">
+            <p className="text-sm text-wood-500 mb-1">{lang === "bn" ? "প্রতি টুকরায় গড় দৈর্ঘ্য" : "Avg length per piece"}</p>
+            <p className="text-xl font-bold text-wood-900 dark:text-cream-50">{lengthLabel(resultStats.avg)}</p>
+          </Card>
+          <Card className="text-center">
+            <p className="text-sm text-wood-500 mb-1">{lang === "bn" ? "মোট দৈর্ঘ্য" : "Total length"}</p>
+            <p className="text-xl font-bold text-wood-900 dark:text-cream-50">{lengthLabel(resultStats.total)}</p>
+          </Card>
+        </div>
+      )}
 
       {/* ---- Notebook: open customer groups ---- */}
       <Card>
@@ -302,10 +559,7 @@ export default function WoodMeasurementPage() {
                     <span className="text-wood-700 dark:text-cream-100">
                       {i + 1}) {itemLabel(item)} → <strong>{item.cft.toFixed(2)}</strong>
                     </span>
-                    <button
-                      onClick={() => removeItemMutation.mutate({ groupId: group._id, itemId: item._id })}
-                      className="text-red-400 hover:text-red-600 p-1"
-                    >
+                    <button onClick={() => removeItemMutation.mutate({ groupId: group._id, itemId: item._id })} className="text-red-400 hover:text-red-600 p-1">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -336,14 +590,14 @@ export default function WoodMeasurementPage() {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => setClosingGroupId(group._id)}
-                  disabled={group.items.length === 0}
-                >
-                  <Lock className="h-4 w-4" /> {t("closeAccount") ?? "হিসাব শেষ করুন"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="secondary" className="flex-1" onClick={() => downloadSlip(group._id, group.slipNumber)}>
+                    <Download className="h-4 w-4" /> {t("downloadSlip") ?? "স্লিপ"}
+                  </Button>
+                  <Button variant="secondary" className="flex-1" onClick={() => setClosingGroupId(group._id)} disabled={group.items.length === 0}>
+                    <Lock className="h-4 w-4" /> {t("closeAccount") ?? "হিসাব শেষ করুন"}
+                  </Button>
+                </div>
               )}
             </div>
           ))}
@@ -372,10 +626,7 @@ export default function WoodMeasurementPage() {
 
         <div className="space-y-2">
           {(history ?? []).map((h) => (
-            <div
-              key={h._id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-wood-100 dark:border-wood-700 px-4 py-3"
-            >
+            <div key={h._id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-wood-100 dark:border-wood-700 px-4 py-3">
               <div>
                 <p className="font-medium text-wood-800 dark:text-cream-100">{h.customerName}</p>
                 <p className="text-xs text-wood-400">
@@ -395,6 +646,94 @@ export default function WoodMeasurementPage() {
           ))}
         </div>
       </Card>
+
+      {/* ---- Review Modal (voice results) ---- */}
+      {reviewBlocks && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-wood-800 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-wood-900 dark:text-cream-50">{lang === "bn" ? "AI বুঝেছে — যাচাই করুন" : "AI understood this — please review"}</h2>
+              <button onClick={() => setReviewBlocks(null)} className="p-1 text-wood-400 hover:text-wood-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {reviewBlocks.map((block, bi) => (
+              <div key={bi} className="mb-4 rounded-xl border border-wood-100 dark:border-wood-700 p-3">
+                <p className="font-bold text-forest-700 dark:text-forest-300 mb-2">{block.customerName}</p>
+                {block.rows.map((row, ri) => (
+                  <div key={ri} className="grid grid-cols-5 gap-1.5 items-center mb-2 text-xs">
+                    <input
+                      type="number"
+                      className="input-field !py-1.5 !text-xs"
+                      value={row.lengthFeet}
+                      onChange={(e) => {
+                        const updated = [...reviewBlocks];
+                        updated[bi].rows[ri].lengthFeet = Number(e.target.value);
+                        setReviewBlocks(updated);
+                      }}
+                      placeholder="ft"
+                    />
+                    <input
+                      type="number"
+                      className="input-field !py-1.5 !text-xs"
+                      value={row.lengthInch}
+                      onChange={(e) => {
+                        const updated = [...reviewBlocks];
+                        updated[bi].rows[ri].lengthInch = Number(e.target.value);
+                        setReviewBlocks(updated);
+                      }}
+                      placeholder="in"
+                    />
+                    <input
+                      type="number"
+                      className="input-field !py-1.5 !text-xs"
+                      value={row.girthInch}
+                      onChange={(e) => {
+                        const updated = [...reviewBlocks];
+                        updated[bi].rows[ri].girthInch = Number(e.target.value);
+                        setReviewBlocks(updated);
+                      }}
+                      placeholder="পরিধি(in)"
+                    />
+                    <input
+                      type="number"
+                      className="input-field !py-1.5 !text-xs"
+                      value={row.quantity}
+                      onChange={(e) => {
+                        const updated = [...reviewBlocks];
+                        updated[bi].rows[ri].quantity = Number(e.target.value);
+                        setReviewBlocks(updated);
+                      }}
+                      placeholder="qty"
+                    />
+                    <button
+                      onClick={() => {
+                        const updated = [...reviewBlocks];
+                        updated[bi].rows.splice(ri, 1);
+                        setReviewBlocks(updated);
+                      }}
+                      className="text-red-400 hover:text-red-600 justify-self-center"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <p className="text-[10px] text-wood-400">ft / in / পরিধি(in) / qty</p>
+              </div>
+            ))}
+
+            <div className="flex gap-2 mt-4">
+              <Button className="flex-1" onClick={() => confirmReviewMutation.mutate()} loading={confirmReviewMutation.isPending}>
+                <Check className="h-4 w-4" /> {lang === "bn" ? "হিসাব করুন" : "Calculate"}
+              </Button>
+              <Button variant="secondary" className="flex-1" onClick={() => setReviewBlocks(null)}>
+                {lang === "bn" ? "বাতিল" : "Cancel"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
