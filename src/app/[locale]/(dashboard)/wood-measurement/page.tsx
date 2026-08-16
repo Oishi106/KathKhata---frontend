@@ -234,9 +234,19 @@ export default function WoodMeasurementPage() {
     }
   });
 
-  const confirmReviewMutation = useMutation({
+const confirmReviewMutation = useMutation({
     mutationFn: async () => {
       if (!reviewBlocks) return;
+
+      // Validate every row has a girth before sending — round log requires it.
+      for (const block of reviewBlocks) {
+        for (const row of block.rows) {
+          if (!row.girthInch || row.girthInch <= 0) {
+            throw new Error("MISSING_GIRTH");
+          }
+        }
+      }
+
       let lastGroupId: string | null = null;
       for (const block of reviewBlocks) {
         if (block.rows.length === 0) continue;
@@ -263,7 +273,17 @@ export default function WoodMeasurementPage() {
       setTranscript("");
       queryClient.invalidateQueries({ queryKey: ["measurement-open-groups"] });
     },
-    onError: () => toast.error(lang === "bn" ? "সংরক্ষণ ব্যর্থ হয়েছে" : "Failed to save")
+    onError: (err: any) => {
+      if (err?.message === "MISSING_GIRTH") {
+        toast.error(
+          lang === "bn"
+            ? "প্রতিটা মাপের জন্য 'পরিধি(in)' ঘরে একটা মান দিন — এটা ছাড়া হিসাব করা যাবে না।"
+            : "Please enter girth for every row — it's required."
+        );
+      } else {
+        toast.error(lang === "bn" ? "সংরক্ষণ ব্যর্থ হয়েছে" : "Failed to save");
+      }
+    }
   });
 
   const removeItemMutation = useMutation({
