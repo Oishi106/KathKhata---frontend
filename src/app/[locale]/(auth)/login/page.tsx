@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="card">
       <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 mb-1">{t("login")}</h1>
-      <p className="text-wood-500 dark:text-wood-300 mb-6">KathKhata AI</p>
+      <p className="text-wood-500 dark:text-wood-300 mb-6">কাঠখাতা</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
