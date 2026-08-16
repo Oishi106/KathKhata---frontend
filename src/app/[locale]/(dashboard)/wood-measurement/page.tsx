@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -409,9 +410,17 @@ const confirmReviewMutation = useMutation({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 flex items-center gap-2">
-        <Ruler className="h-6 w-6 text-forest-600" /> {t("title") ?? "কাঠের হিসাব"}
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 flex items-center gap-2">
+          <Ruler className="h-6 w-6 text-forest-600" /> {t("title") ?? "কাঠের হিসাব"}
+        </h1>
+        <Link
+          href={`/${locale}/wood-measurement/rules`}
+          className="text-sm font-medium text-forest-600 hover:underline"
+        >
+          {lang === "bn" ? "⚙️ হিসাবের নিয়ম" : "⚙️ Calculation Rules"}
+        </Link>
+      </div>
 
       {/* ---- Calculator card ---- */}
       <Card>
