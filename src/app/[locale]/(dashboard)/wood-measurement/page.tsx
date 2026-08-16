@@ -72,6 +72,23 @@ export default function WoodMeasurementPage() {
   const [closingGroupId, setClosingGroupId] = useState<string | null>(null);
   const [closeRate, setCloseRate] = useState("");
   const [closePaid, setClosePaid] = useState("");
+  
+  const [dailyBookDate, setDailyBookDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const { data: dailyBook } = useQuery({
+    queryKey: ["measurement-daily-book", dailyBookDate],
+    queryFn: async () => (await api.get("/wood-measurement/daily-book", { params: { date: dailyBookDate } })).data.data
+  });
+
+  const downloadDailyBook = async (date: string) => {
+    const res = await api.get("/wood-measurement/daily-book/pdf", { params: { date }, responseType: "blob" });
+    const url = URL.createObjectURL(new Blob([res.data]));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `daily-book-${date}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // ---- voice ----
   const [isListening, setIsListening] = useState(false);
@@ -676,6 +693,50 @@ const confirmReviewMutation = useMutation({
         </div>
       </Card>
 
+      {/* ---- Daily Measurement Book ---- */}
+      <Card>
+        <CardHeader title={lang === "bn" ? "দৈনিক মাপের বই" : "Daily Measurement Book"} />
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <input
+            type="date"
+            className="input-field w-auto"
+            value={dailyBookDate}
+            onChange={(e) => setDailyBookDate(e.target.value)}
+          />
+          <Button variant="secondary" size="sm" onClick={() => downloadDailyBook(dailyBookDate)}>
+            <Download className="h-4 w-4" /> {lang === "bn" ? "PDF ডাউনলোড" : "Download PDF"}
+          </Button>
+        </div>
+
+        {(!dailyBook || dailyBook.records.length === 0) && (
+          <p className="text-wood-400 text-sm text-center py-6">
+            {lang === "bn" ? "এই দিনে কোনো হিসাব নেই" : "No records for this day"}
+          </p>
+        )}
+
+        {dailyBook && dailyBook.records.length > 0 && (
+          <>
+            <div className="space-y-3 mb-4">
+              {dailyBook.records.map((g: any) => (
+                <div key={g._id} className="rounded-xl border border-wood-100 dark:border-wood-700 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-wood-800 dark:text-cream-100">{g.customerName}</p>
+                    <span className="text-sm font-semibold text-forest-600">{g.totalCFT.toFixed(2)} CFT</span>
+                  </div>
+                  <p className="text-xs text-wood-400">{g.slipNumber} · {g.status === "closed" ? (lang === "bn" ? "সম্পন্ন" : "Closed") : (lang === "bn" ? "চলমান" : "Open")}</p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl bg-forest-50 dark:bg-forest-900/30 p-4 flex items-center justify-between">
+              <span className="font-semibold text-wood-700 dark:text-wood-200">{lang === "bn" ? "সর্বমোট" : "Grand Total"}</span>
+              <span className="text-lg font-bold text-forest-700 dark:text-forest-300">
+                {dailyBook.grandTotalCFT.toFixed(2)} CFT — {formatCurrency(dailyBook.grandTotalPrice, lang)}
+              </span>
+            </div>
+          </>
+        )}
+      </Card>
+      
       {/* ---- Review Modal (voice results) ---- */}
       {reviewBlocks && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
