@@ -18,6 +18,10 @@ export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const clearCustomValidity = (e: React.FormEvent<HTMLInputElement>) => {
+    e.currentTarget.setCustomValidity("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -47,7 +51,15 @@ export default function ResetPasswordPage() {
               required
               maxLength={6}
               value={token}
-              onChange={(e) => setToken(e.target.value)}
+              onChange={(e) => {
+                setToken(e.target.value);
+                clearCustomValidity(e);
+              }}
+              onInvalid={(e) => {
+                if (e.currentTarget.validity.valueMissing) {
+                  e.currentTarget.setCustomValidity(t("fieldRequired"));
+                }
+              }}
               className="input-field pl-12 tracking-widest text-lg font-semibold"
               placeholder={t("resetCodePlaceholder")}
             />
@@ -64,10 +76,14 @@ export default function ResetPasswordPage() {
               value={newPassword}
               onChange={(e) => {
                 setNewPassword(e.target.value);
-                e.currentTarget.setCustomValidity("");
+                clearCustomValidity(e);
               }}
               onInvalid={(e) => {
-                e.currentTarget.setCustomValidity(t("passwordMinLength"));
+                if (e.currentTarget.validity.valueMissing) {
+                  e.currentTarget.setCustomValidity(t("fieldRequired"));
+                } else if (e.currentTarget.validity.tooShort) {
+                  e.currentTarget.setCustomValidity(t("passwordMinLength"));
+                }
               }}
               className="input-field pl-12"
               placeholder="••••••••"

@@ -41,7 +41,15 @@ export default function ForgotPasswordPage() {
             type="tel"
             required
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              e.currentTarget.setCustomValidity("");
+            }}
+            onInvalid={(e) => {
+              if (e.currentTarget.validity.valueMissing) {
+                e.currentTarget.setCustomValidity(t("fieldRequired"));
+              }
+            }}
             className="input-field pl-12"
             placeholder="01XXXXXXXXX"
           />
