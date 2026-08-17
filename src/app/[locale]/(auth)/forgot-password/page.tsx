@@ -1,8 +1,8 @@
 "use client";
 
-
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
   const { locale } = useParams<{ locale: string }>();
-
+  const t = useTranslations("auth");
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       await api.post("/auth/forgot-password", { phone });
-      toast.success("Reset instructions sent");
+      toast.success(t("forgotPasswordSubtitle"));
       router.push(`/${locale}/reset-password?phone=${encodeURIComponent(phone)}`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? "Something went wrong");
@@ -31,10 +31,8 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="card">
-      <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 mb-1">Forgot password</h1>
-      <p className="text-wood-500 dark:text-wood-300 mb-6">
-        Enter your phone number and we&apos;ll send you reset instructions.
-      </p>
+      <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 mb-1">{t("forgotPasswordTitle")}</h1>
+      <p className="text-wood-500 dark:text-wood-300 mb-6">{t("forgotPasswordSubtitle")}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="relative">
@@ -49,7 +47,7 @@ export default function ForgotPasswordPage() {
           />
         </div>
         <Button type="submit" className="w-full" size="lg" loading={loading}>
-          Send reset instructions
+          {t("sendResetCode")}
         </Button>
       </form>
     </div>

@@ -1,17 +1,15 @@
 "use client";
 
-
 import { useState } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Lock } from "lucide-react";
+import { Lock, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 
 export default function ResetPasswordPage() {
   const { locale } = useParams<{ locale: string }>();
-
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,7 +23,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
     try {
       await api.post("/auth/reset-password", { phone, token, newPassword });
-      toast.success("Password reset. Please log in.");
+      toast.success("Password reset successful. Please log in.");
       router.push(`/${locale}/login`);
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? "Reset failed");
@@ -36,29 +34,48 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="card">
-      <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 mb-6">{t("resetPassword")}</h1>
+      <h1 className="text-2xl font-bold text-wood-900 dark:text-cream-50 mb-1">{t("resetPassword")}</h1>
+      <p className="text-wood-500 dark:text-wood-300 mb-6">{t("forgotPasswordSubtitle")}</p>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          required
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          className="input-field"
-          placeholder="Reset code"
-        />
-        <div className="relative">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-wood-300" />
-          <input
-            type="password"
-            required
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="input-field pl-12"
-            placeholder={t("newPassword")}
-          />
+        <div>
+          <label className="block text-sm font-medium mb-2">{t("resetCode")}</label>
+          <div className="relative">
+            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-wood-300" />
+            <input
+              type="text"
+              required
+              maxLength={6}
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className="input-field pl-12 tracking-widest text-lg font-semibold"
+              placeholder={t("resetCodePlaceholder")}
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">{t("newPassword")}</label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-wood-300" />
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                e.currentTarget.setCustomValidity("");
+              }}
+              onInvalid={(e) => {
+                e.currentTarget.setCustomValidity(t("passwordMinLength"));
+              }}
+              className="input-field pl-12"
+              placeholder="••••••••"
+            />
+          </div>
         </div>
         <Button type="submit" className="w-full" size="lg" loading={loading}>
-          {t("resetPassword")}
+          {t("resetPasswordButton")}
         </Button>
       </form>
     </div>
