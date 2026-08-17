@@ -101,7 +101,7 @@ export default function WoodMeasurementPage() {
   });
 
   const [historySearch, setHistorySearch] = useState("");
-  const [closingGroupId, setClosingGroupId] = useState<string | null>(null);
+  const [closingGroupId, setClosingGroupId] = useState<string | null>(null);    
   const [closeRate, setCloseRate] = useState("");
   const [closePaid, setClosePaid] = useState("");
   
