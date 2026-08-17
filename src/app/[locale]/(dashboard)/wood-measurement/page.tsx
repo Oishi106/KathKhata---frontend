@@ -22,7 +22,8 @@ import {
   PenLine,
   X,
   Check,
-  Sparkles
+  Sparkles,
+  Layers
 } from "lucide-react";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -67,6 +68,37 @@ export default function WoodMeasurementPage() {
   const [width, setWidth] = useState<DimensionField>(emptyField());
   const [thickness, setThickness] = useState<DimensionField>(emptyField());
   const [quantity, setQuantity] = useState("1");
+  
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+
+  const toggleHistorySelection = (id: string) => {
+    setSelectedHistoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const downloadSelectedSeparately = async () => {
+    for (const id of selectedHistoryIds) {
+      const record = history?.find((h) => h._id === id);
+      if (record) await downloadSlip(id, record.slipNumber);
+    }
+    setSelectedHistoryIds([]);
+  };
+
+  const mergePdfMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post("/wood-measurement/bulk-pdf", { ids: selectedHistoryIds }, { responseType: "blob" });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `merged-slips-${Date.now()}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    onSuccess: () => {
+      toast.success(lang === "bn" ? "মার্জ করা PDF ডাউনলোড হয়েছে" : "Merged PDF downloaded");
+      setSelectedHistoryIds([]);
+    },
+    onError: () => toast.error(lang === "bn" ? "PDF তৈরি করা যায়নি" : "Failed to generate PDF")
+  });
 
   const [historySearch, setHistorySearch] = useState("");
   const [closingGroupId, setClosingGroupId] = useState<string | null>(null);
@@ -650,9 +682,22 @@ const confirmReviewMutation = useMutation({
         </div>
       </Card>
 
-      {/* ---- History ---- */}
+{/* ---- History ---- */}
       <Card>
-        <CardHeader title={t("history") ?? "হিসাবের ইতিহাস"} />
+        <div className="flex items-center justify-between mb-4">
+          <CardHeader title={t("history") ?? "হিসাবের ইতিহাস"} />
+          {selectedHistoryIds.length > 0 && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={downloadSelectedSeparately}>
+                <Download className="h-4 w-4" /> {lang === "bn" ? `${selectedHistoryIds.length}টা ডাউনলোড` : `Download ${selectedHistoryIds.length}`}
+              </Button>
+              <Button size="sm" onClick={() => mergePdfMutation.mutate()} loading={mergePdfMutation.isPending}>
+                <Layers className="h-4 w-4" /> {lang === "bn" ? "একত্রে PDF" : "Merge PDF"}
+              </Button>
+            </div>
+          )}
+        </div>
+
         <div className="relative mb-5 max-w-sm">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-wood-300" />
           <input
@@ -673,11 +718,19 @@ const confirmReviewMutation = useMutation({
         <div className="space-y-2">
           {(history ?? []).map((h) => (
             <div key={h._id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-wood-100 dark:border-wood-700 px-4 py-3">
-              <div>
-                <p className="font-medium text-wood-800 dark:text-cream-100">{h.customerName}</p>
-                <p className="text-xs text-wood-400">
-                  {h.slipNumber} · {formatDate(h.createdAt, lang)}
-                </p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 accent-forest-600"
+                  checked={selectedHistoryIds.includes(h._id)}
+                  onChange={() => toggleHistorySelection(h._id)}
+                />
+                <div>
+                  <p className="font-medium text-wood-800 dark:text-cream-100">{h.customerName}</p>
+                  <p className="text-xs text-wood-400">
+                    {h.slipNumber} · {formatDate(h.createdAt, lang)}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-sm font-semibold text-forest-600">{formatCurrency(h.totalPrice, lang)}</span>
