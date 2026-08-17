@@ -46,6 +46,8 @@
     "resetPassword": "পাসওয়ার্ড রিসেট করুন",
     "newPassword": "নতুন পাসওয়ার্ড",
     "passwordMinLength": "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে",
+    "fieldRequired": "এই ফিল্ডটি পূরণ করা আবশ্যক",
+    "invalidEmail": "সঠিক ইমেইল ঠিকানা লিখুন",
     "forgotPasswordTitle": "পাসওয়ার্ড ভুলে গেছেন",
     "forgotPasswordSubtitle": "আপনার ফোন নম্বর দিন, আমরা রিসেট কোড ইমেইলে পাঠাব",
     "sendResetCode": "রিসেট কোড পাঠান",

@@ -26,6 +26,16 @@ export default function RegisterPage() {
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // required ফিল্ডের জন্য common invalid handler — ব্রাউজারের ডিফল্ট ইংরেজি মেসেজের বদলে locale অনুযায়ী মেসেজ দেখায়
+  const handleRequiredInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
+    if (e.currentTarget.validity.valueMissing) {
+      e.currentTarget.setCustomValidity(t("fieldRequired"));
+    }
+  };
+  const clearCustomValidity = (e: React.FormEvent<HTMLInputElement>) => {
+    e.currentTarget.setCustomValidity("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -54,7 +64,11 @@ export default function RegisterPage() {
               type="text"
               required
               value={form.name}
-              onChange={update("name")}
+              onChange={(e) => {
+                update("name")(e);
+                clearCustomValidity(e);
+              }}
+              onInvalid={handleRequiredInvalid}
               className="input-field pl-12"
               placeholder={t("namePlaceholder")}
             />
@@ -69,7 +83,11 @@ export default function RegisterPage() {
               type="tel"
               required
               value={form.phone}
-              onChange={update("phone")}
+              onChange={(e) => {
+                update("phone")(e);
+                clearCustomValidity(e);
+              }}
+              onInvalid={handleRequiredInvalid}
               className="input-field pl-12"
               placeholder="01XXXXXXXXX"
             />
@@ -84,7 +102,17 @@ export default function RegisterPage() {
               type="email"
               required
               value={form.email}
-              onChange={update("email")}
+              onChange={(e) => {
+                update("email")(e);
+                clearCustomValidity(e);
+              }}
+              onInvalid={(e) => {
+                if (e.currentTarget.validity.valueMissing) {
+                  e.currentTarget.setCustomValidity(t("fieldRequired"));
+                } else if (e.currentTarget.validity.typeMismatch) {
+                  e.currentTarget.setCustomValidity(t("invalidEmail"));
+                }
+              }}
               className="input-field pl-12"
               placeholder="you@example.com"
             />
@@ -114,7 +142,17 @@ export default function RegisterPage() {
               required
               minLength={6}
               value={form.password}
-              onChange={update("password")}
+              onChange={(e) => {
+                update("password")(e);
+                clearCustomValidity(e);
+              }}
+              onInvalid={(e) => {
+                if (e.currentTarget.validity.valueMissing) {
+                  e.currentTarget.setCustomValidity(t("fieldRequired"));
+                } else if (e.currentTarget.validity.tooShort) {
+                  e.currentTarget.setCustomValidity(t("passwordMinLength"));
+                }
+              }}
               className="input-field pl-12"
               placeholder="••••••••"
             />
@@ -131,7 +169,7 @@ export default function RegisterPage() {
             {t("login")}
           </Link>
         </p>
-      </form>         
+      </form>
     </div>
   );
 }

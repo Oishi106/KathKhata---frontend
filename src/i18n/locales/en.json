@@ -46,6 +46,8 @@
     "resetPassword": "Reset password",
     "newPassword": "New password",
     "passwordMinLength": "Password must be at least 6 characters",
+    "fieldRequired": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
     "forgotPasswordTitle": "Forgot Password",
     "forgotPasswordSubtitle": "Enter your phone number and we'll email you a reset code",
     "sendResetCode": "Send Reset Code",
