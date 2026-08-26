@@ -84,4 +84,4 @@ export const breakdownCft = (cft: number): CftBreakdown => {
   }
 
   return { feet: sign * finalFeet, inches, points };     
-};
+};      
