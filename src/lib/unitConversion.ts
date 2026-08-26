@@ -51,3 +51,37 @@ export const breakdownFromInches = (totalInches: number): LengthBreakdown => {
     totalFeetDecimal: round2(totalInches / 12)
   };
 };
+
+
+/**
+ * CFT (cubic feet) কে "ফুট-ইঞ্চি-পয়েন্ট" style এ ভাঙে —
+ * এটা প্রকৃত ইউনিট কনভার্সন না (CFT আয়তন, বাকিগুলো দৈর্ঘ্য),
+ * শুধু করাতকলের প্রথাগত display format অনুকরণ করে।
+ */
+export interface CftBreakdown {
+  feet: number;
+  inches: number;
+  points: number;
+}
+
+export const breakdownCft = (cft: number): CftBreakdown => {
+  const sign = cft < 0 ? -1 : 1;
+  const abs = Math.abs(cft);
+
+  const feet = Math.floor(abs);
+  const inchDecimal = (abs - feet) * 12;
+  let inches = Math.floor(inchDecimal);
+  let points = Math.round((inchDecimal - inches) * 100);
+
+  let finalFeet = feet;
+  if (points >= 100) {
+    points = 0;
+    inches += 1;
+  }
+  if (inches >= 12) {
+    inches = 0;
+    finalFeet += 1;
+  }
+
+  return { feet: sign * finalFeet, inches, points };
+};

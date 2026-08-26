@@ -29,7 +29,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { toInches, breakdownFromInches, type LengthUnit } from "@/lib/unitConversion";
+import { toInches, breakdownFromInches, breakdownCft, type LengthUnit } from "@/lib/unitConversion";
 import type { Measurement, MeasurementItem } from "@/types";
 
 type Mode = "round_log" | "size_cut";
@@ -550,10 +550,21 @@ const confirmReviewMutation = useMutation({
               </div>
             )}
 
-            <div className="mt-5 rounded-xl bg-forest-50 dark:bg-forest-900/30 p-5 flex items-center justify-between">
-              <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "সিএফটি"}</span>
-              <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
-            </div>
+            <div className="mt-5 rounded-xl bg-forest-50 dark:bg-forest-900/30 p-5">
+  <div className="flex items-center justify-between">
+    <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "CFT"}</span>
+    <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
+  </div>
+  {preview > 0 && (() => {
+    const b = breakdownCft(preview);
+    return (
+      <p className="text-xs text-wood-400 text-right mt-1">
+        ≈ {b.feet > 0 ? `${b.feet} ${lang === "bn" ? "ফুট" : "ft"} ` : ""}
+        {b.inches} {lang === "bn" ? "ইঞ্চি" : "in"} {b.points} {lang === "bn" ? "পয়েন্ট" : "pt"}
+      </p>
+    );
+  })()}
+</div>
 
             <Button className="w-full mt-4" size="lg" onClick={() => addManualMutation.mutate()} loading={addManualMutation.isPending}>
               <Plus className="h-5 w-5" /> {t("addToNotebook") ?? "খাতায় যোগ করুন"}
@@ -627,7 +638,7 @@ const confirmReviewMutation = useMutation({
                   <p className="text-xs text-wood-400">{group.slipNumber}</p>
                 </div>
                 <span className="text-sm font-semibold text-forest-600">
-                  {group.totalCFT.toFixed(2)} {lang === "bn" ? "সিএফটি" : "CFT"}
+                  {group.totalCFT.toFixed(2)} {lang === "bn" ? "CFT" : "CFT"}
                 </span>
               </div>
 
