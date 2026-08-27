@@ -1,15 +1,19 @@
 /**
- * Frontend mirror of the backend's centralized unit conversion.
- * Keep in sync with kathkhata-ai-backend/src/modules/wood-measurement/utils/unitConversion.ts
+ * Centralized unit conversion — the ONLY place these ratios are defined.
+ * Never duplicate these conversions anywhere else in the app.
  *
- * 1 foot = 12 inches | 1 inch = 100 points | 1 foot = 1200 points
- * 1 inch = 2.54 cm   | 1 foot = 30.48 cm   | 1 point = 0.01 inch
+ * 1 foot   = 12 inches
+ * 1 inch   = 100 points
+ * 1 foot   = 1200 points
+ * 1 inch   = 2.54 centimeters
+ * 1 foot   = 30.48 centimeters
+ * 1 point  = 0.01 inch
  */
 
 export interface LengthBreakdown {
   feet: number;
-  inches: number;
-  points: number;
+  inches: number; // remaining inches after whole feet
+  points: number; // remaining points after whole inches
   totalInches: number;
   totalPoints: number;
   totalCm: number;
@@ -18,9 +22,8 @@ export interface LengthBreakdown {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-export type LengthUnit = "feet" | "inch" | "cm" | "point";
-
-export const toInches = (value: number, unit: LengthUnit): number => {
+/** Convert a raw value + unit into total inches (the internal base unit). */
+export const toInches = (value: number, unit: "feet" | "inch" | "cm" | "point"): number => {
   switch (unit) {
     case "feet":
       return value * 12;
@@ -35,6 +38,7 @@ export const toInches = (value: number, unit: LengthUnit): number => {
   }
 };
 
+/** Break a total-inches value down into feet/inch/point + all common equivalents. */
 export const breakdownFromInches = (totalInches: number): LengthBreakdown => {
   const feet = Math.floor(totalInches / 12);
   const remainingInchesDecimal = totalInches - feet * 12;
@@ -45,43 +49,71 @@ export const breakdownFromInches = (totalInches: number): LengthBreakdown => {
     feet,
     inches,
     points,
-    totalInches: round2(totalInches),
-    totalPoints: round2(totalInches * 100),
-    totalCm: round2(totalInches * 2.54),
+    totalInches: round2(totalInches),                        
+    totalPoints: round2(totalInches * 100),    
+    totalCm: round2(totalInches * 2.54),                              
     totalFeetDecimal: round2(totalInches / 12)
   };
 };
 
+/** Combine separate feet+inch+point fields (as commonly entered) into total inches. */
+export const combineToInches = (feet = 0, inches = 0, points = 0): number => {
+  return feet * 12 + inches + points / 100;                             
+};
 
 /**
  * CFT (cubic feet) কে "ফুট-ইঞ্চি-পয়েন্ট" style এ ভাঙে —
  * এটা প্রকৃত ইউনিট কনভার্সন না (CFT আয়তন, বাকিগুলো দৈর্ঘ্য),
  * শুধু করাতকলের প্রথাগত display format অনুকরণ করে।
+ *
+ * নিয়ম:
+ * ১) CFT আগে ২ decimal-এ round হবে
+ * ২) rounded CFT × 12 = total inch (decimal)
+ * ৩) সেটা ১ decimal-এ round হবে
+ * ৪) পূর্ণ অংশ = ইঞ্চি, দশমিকের অংক (০-৯) = পয়েন্ট
  */
 export interface CftBreakdown {
   feet: number;
   inches: number;
-  points: number;
+  points: number; // single digit 0-9
 }
 
 export const breakdownCft = (cft: number): CftBreakdown => {
   const sign = cft < 0 ? -1 : 1;
   const abs = Math.abs(cft);
 
-  const feet = Math.floor(abs);
-  const inchDecimal = (abs - feet) * 12;
-  let inches = Math.floor(inchDecimal);
-  let points = Math.round((inchDecimal - inches) * 100);
+  // ধাপ ১: CFT-কে ২ decimal-এ round
+  const roundedCft = Math.round(abs * 100) / 100;
 
-  let finalFeet = feet;
-  if (points >= 100) {
-    points = 0;
+  // ধাপ ২: rounded CFT থেকে মোট ইঞ্চি (decimal)
+  const totalInchesRaw = roundedCft * 12;
+
+  // ধাপ ৩: ১ decimal-এ round
+  const totalInchesRounded = Math.round(totalInchesRaw * 10) / 10;
+
+  // ধাপ ৪: ফুট / পূর্ণ ইঞ্চি / পয়েন্ট (single digit) এ ভাগ
+  let feet = Math.floor(totalInchesRounded / 12);
+  const remainingInches = totalInchesRounded - feet * 12;
+  let inches = Math.floor(remainingInches);
+  let point = Math.round((remainingInches - inches) * 10);
+
+  // overflow সামলানো (point 10 হলে)
+  if (point >= 10) {
+    point = 0;
     inches += 1;
   }
   if (inches >= 12) {
     inches = 0;
-    finalFeet += 1;
+    feet += 1;
   }
 
-  return { feet: sign * finalFeet, inches, points };     
-};      
+  return { feet: sign * feet, inches, points: point };
+};
+
+/** PDF/UI-তে সরাসরি বসানোর জন্য রেডি স্ট্রিং — যেমন "0.77 সিএফটি (9 ইঞ্চি 2 পয়েন্ট)" */
+export const formatCftLine = (cft: number): string => {
+  const roundedCft = Math.round(Math.abs(cft) * 100) / 100 * (cft < 0 ? -1 : 1);
+  const b = breakdownCft(cft);
+  const feetPart = b.feet !== 0 ? `${b.feet} ফুট ` : "";
+  return `${roundedCft.toFixed(2)} সিএফটি (${feetPart}${b.inches} ইঞ্চি ${b.points} পয়েন্ট)`;
+};
