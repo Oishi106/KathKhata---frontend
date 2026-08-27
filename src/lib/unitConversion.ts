@@ -10,6 +10,8 @@
  * 1 point  = 0.01 inch
  */
 
+export type LengthUnit = "feet" | "inch" | "cm" | "point";
+
 export interface LengthBreakdown {
   feet: number;
   inches: number; // remaining inches after whole feet
@@ -23,7 +25,7 @@ export interface LengthBreakdown {
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Convert a raw value + unit into total inches (the internal base unit). */
-export const toInches = (value: number, unit: "feet" | "inch" | "cm" | "point"): number => {
+export const toInches = (value: number, unit: LengthUnit): number => {
   switch (unit) {
     case "feet":
       return value * 12;
