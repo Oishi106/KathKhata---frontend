@@ -677,7 +677,7 @@ export default function WoodMeasurementPage() {
             <p className="mt-3 text-sm text-wood-500">
               {isListening
                 ? lang === "bn" ? "শুনছি... আবার চাপুন থামাতে" : "Listening... tap to stop"
-                : lang === "bn" ? "মাইকে চাপুন ও বলুন, যেমন: 'রহিমের কার্ড, দশ ফুট ছয় ইঞ্চির কাঠ দুইটা, রহিম শেষ'" : "Tap and speak naturally"}
+                : lang === "bn" ? "মাইকে চাপুন ও বলুন, যেমন: 'রহিমের কাঠ, দশ ফুট ছয় ইঞ্চির কাঠ দুইটা, রহিম শেষ'" : "Tap and speak naturally"}
             </p>
 
             {transcript && (
