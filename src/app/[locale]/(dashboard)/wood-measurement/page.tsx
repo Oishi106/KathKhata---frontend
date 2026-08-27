@@ -48,6 +48,26 @@ interface FeetInchField {
 const emptyField = (): DimensionField => ({ value: "", unit: "feet" });
 const emptyFeetInchField = (): FeetInchField => ({ feet: "", inch: "" });
 
+// বাংলা সংখ্যা-শব্দকে অঙ্কে দেখানো + "এরপর"/"তারপর"-এর পর কমা বসানো —
+// শুধু transcript প্রিভিউ-এর জন্য, parsing logic backend-এই থাকে
+const banglaNumberWordsToDigits: Record<string, string> = {
+  "শূন্য": "০", "এক": "১", "দুই": "২", "তিন": "৩", "চার": "৪", "পাঁচ": "৫",
+  "ছয়": "৬", "সাত": "৭", "আট": "৮", "নয়": "৯", "দশ": "১০",
+  "এগারো": "১১", "বারো": "১২", "তেরো": "১৩", "চৌদ্দ": "১৪", "পনেরো": "১৫",
+  "ষোল": "১৬", "সতেরো": "১৭", "আঠারো": "১৮", "উনিশ": "১৯", "বিশ": "২০"
+};
+
+const formatTranscriptForDisplay = (text: string): string => {
+  let result = text;
+  const sortedWords = Object.keys(banglaNumberWordsToDigits).sort((a, b) => b.length - a.length);
+  for (const word of sortedWords) {
+    const re = new RegExp(word, "g");
+    result = result.replace(re, banglaNumberWordsToDigits[word]);
+  }
+  result = result.replace(/(এরপর|তারপর)/g, "$1,");
+  return result;
+};
+
 interface ReviewRow {
   lengthFeet: number;
   lengthInch: number;
@@ -242,12 +262,15 @@ export default function WoodMeasurementPage() {
     recognition.interimResults = false;
     recognition.lang = "bn-BD";
 
-    recognition.onresult = (event: any) => {
+       recognition.onresult = (event: any) => {
       let finalText = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
       }
-      if (finalText.trim()) setTranscript((prev) => (prev ? `${prev} ${finalText.trim()}` : finalText.trim()));
+      if (finalText.trim()) {
+        const formatted = formatTranscriptForDisplay(finalText.trim());
+        setTranscript((prev) => (prev ? `${prev} ${formatted}` : formatted));
+      }
     };
     recognition.onerror = (e: any) => {
       if (e.error !== "no-speech") {
