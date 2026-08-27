@@ -123,8 +123,8 @@ export default function PurchasesPage() {
     onError: (err: any) => toast.error(err?.response?.data?.message ?? "Failed to record purchase")
   });
 
-  const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [key]: e.target.value }));
+ const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const handleVoiceResult = (result: Record<string, string | number | null>) => {
     let matchedSupplierId = "";
