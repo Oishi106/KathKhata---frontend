@@ -29,7 +29,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { api } from "@/lib/api";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { toInches, breakdownFromInches, breakdownCft, type LengthUnit } from "@/lib/unitConversion";
+import { toInches, breakdownFromInches, combineToInches, breakdownCft, type LengthUnit } from "@/lib/unitConversion";
 import type { Measurement, MeasurementItem } from "@/types";
 
 type Mode = "round_log" | "size_cut";
@@ -40,7 +40,13 @@ interface DimensionField {
   unit: LengthUnit;
 }
 
+interface FeetInchField {
+  feet: string;
+  inch: string;
+}
+
 const emptyField = (): DimensionField => ({ value: "", unit: "feet" });
+const emptyFeetInchField = (): FeetInchField => ({ feet: "", inch: "" });
 
 interface ReviewRow {
   lengthFeet: number;
@@ -53,6 +59,103 @@ interface ReviewBlock {
   rows: ReviewRow[];
 }
 
+// ---- Standalone input components (module-level so they never remount on parent re-render) ----
+
+interface DimensionInputProps {
+  label: string;
+  field: DimensionField;
+  setField: (f: DimensionField) => void;
+  lang: string;
+  unitOptions: { value: LengthUnit; label: string }[];
+}
+
+const DimensionInput = ({ label, field, setField, lang, unitOptions }: DimensionInputProps) => {
+  const inches = toInches(Number(field.value) || 0, field.unit);
+  const b = breakdownFromInches(inches);
+  const lengthLabel =
+    lang === "bn" ? `${b.feet} ফুট ${b.inches} ইঞ্চি ${b.points} পয়েন্ট` : `${b.feet} ft ${b.inches} in ${b.points} pt`;
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1">{label}</label>
+      <div className="flex gap-2">
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          className="input-field"
+          value={field.value}
+          onChange={(e) => setField({ ...field, value: e.target.value })}
+        />
+        <select
+          className="input-field w-28 shrink-0"
+          value={field.unit}
+          onChange={(e) => setField({ ...field, unit: e.target.value as LengthUnit })}
+        >
+          {unitOptions.map((u) => (
+            <option key={u.value} value={u.value}>
+              {u.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {Number(field.value) > 0 && (
+        <p className="text-xs text-wood-400 mt-1">
+          ≈ {lengthLabel} · {b.totalCm} cm
+        </p>
+      )}
+    </div>
+  );
+};
+
+interface GirthFeetInchInputProps {
+  label: string;
+  field: FeetInchField;
+  setField: (f: FeetInchField) => void;
+  lang: string;
+}
+
+const GirthFeetInchInput = ({ label, field, setField, lang }: GirthFeetInchInputProps) => {
+  const inches = combineToInches(Number(field.feet) || 0, Number(field.inch) || 0, 0);
+  const b = breakdownFromInches(inches);
+  const hasValue = Number(field.feet) > 0 || Number(field.inch) > 0;
+  const lengthLabel =
+    lang === "bn" ? `${b.feet} ফুট ${b.inches} ইঞ্চি ${b.points} পয়েন্ট` : `${b.feet} ft ${b.inches} in ${b.points} pt`;
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1">{label}</label>
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <input
+            type="number"
+            min={0}
+            step="1"
+            className="input-field"
+            value={field.feet}
+            onChange={(e) => setField({ ...field, feet: e.target.value })}
+            placeholder={lang === "bn" ? "ফুট" : "Feet"}
+          />
+        </div>
+        <div className="flex-1">
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            className="input-field"
+            value={field.inch}
+            onChange={(e) => setField({ ...field, inch: e.target.value })}
+            placeholder={lang === "bn" ? "ইঞ্চি" : "Inch"}
+          />
+        </div>
+      </div>
+      {hasValue && (
+        <p className="text-xs text-wood-400 mt-1">
+          ≈ {lengthLabel} · {b.totalCm} cm
+        </p>
+      )}
+    </div>
+  );
+};
+
 export default function WoodMeasurementPage() {
   const { locale } = useParams<{ locale: string }>();
   const t = useTranslations("woodMeasurement");
@@ -63,12 +166,13 @@ export default function WoodMeasurementPage() {
   const [inputMethod, setInputMethod] = useState<InputMethod>("manual");
   const [customerName, setCustomerName] = useState("");
 
-  const [girth, setGirth] = useState<DimensionField>(emptyField());
+  // পরিধি এখন ফুট + ইঞ্চি — দুইটা আলাদা ইনপুট
+  const [girthFeetInch, setGirthFeetInch] = useState<FeetInchField>(emptyFeetInchField());
   const [length, setLength] = useState<DimensionField>(emptyField());
   const [width, setWidth] = useState<DimensionField>(emptyField());
   const [thickness, setThickness] = useState<DimensionField>(emptyField());
   const [quantity, setQuantity] = useState("1");
-  
+
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
 
   const toggleHistorySelection = (id: string) => {
@@ -101,10 +205,10 @@ export default function WoodMeasurementPage() {
   });
 
   const [historySearch, setHistorySearch] = useState("");
-  const [closingGroupId, setClosingGroupId] = useState<string | null>(null);    
+  const [closingGroupId, setClosingGroupId] = useState<string | null>(null);
   const [closeRate, setCloseRate] = useState("");
   const [closePaid, setClosePaid] = useState("");
-  
+
   const [dailyBookDate, setDailyBookDate] = useState(new Date().toISOString().slice(0, 10));
 
   const { data: dailyBook } = useQuery({
@@ -223,7 +327,8 @@ export default function WoodMeasurementPage() {
   );
 
   // ---- manual live preview ----
-  const girthInches = toInches(Number(girth.value) || 0, girth.unit);
+  // পরিধি এখন ফুট + ইঞ্চি থেকে combine হচ্ছে
+  const girthInches = combineToInches(Number(girthFeetInch.feet) || 0, Number(girthFeetInch.inch) || 0, 0);
   const lengthInches = toInches(Number(length.value) || 0, length.unit);
   const widthInches = toInches(Number(width.value) || 0, width.unit);
   const thicknessInches = toInches(Number(thickness.value) || 0, thickness.unit);
@@ -239,7 +344,7 @@ export default function WoodMeasurementPage() {
   }, [mode, girthInches, lengthInches, widthInches, thicknessInches, quantity]);
 
   const resetInputs = () => {
-    setGirth(emptyField());
+    setGirthFeetInch(emptyFeetInchField());
     setLength(emptyField());
     setWidth(emptyField());
     setThickness(emptyField());
@@ -284,7 +389,7 @@ export default function WoodMeasurementPage() {
     }
   });
 
-const confirmReviewMutation = useMutation({
+  const confirmReviewMutation = useMutation({
     mutationFn: async () => {
       if (!reviewBlocks) return;
 
@@ -415,48 +520,6 @@ const confirmReviewMutation = useMutation({
     { value: "point", label: lang === "bn" ? "পয়েন্ট" : "Point" }
   ];
 
-  const DimensionInput = ({
-    label,
-    field,
-    setField
-  }: {
-    label: string;
-    field: DimensionField;
-    setField: (f: DimensionField) => void;
-  }) => {
-    const inches = toInches(Number(field.value) || 0, field.unit);
-    const b = breakdownFromInches(inches);
-    return (
-      <div>
-        <label className="block text-sm font-medium mb-1">{label}</label>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            min={0}
-            step="0.01"
-            className="input-field"
-            value={field.value}
-            onChange={(e) => setField({ ...field, value: e.target.value })}
-          />
-          <select
-            className="input-field w-28 shrink-0"
-            value={field.unit}
-            onChange={(e) => setField({ ...field, unit: e.target.value as LengthUnit })}
-          >
-            {unitOptions.map((u) => (
-              <option key={u.value} value={u.value}>
-                {u.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {Number(field.value) > 0 && (
-          <p className="text-xs text-wood-400 mt-1">≈ {lengthLabel(b)} · {b.totalCm} cm</p>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -531,8 +594,19 @@ const confirmReviewMutation = useMutation({
 
             {mode === "round_log" ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <DimensionInput label={lang === "bn" ? "পরিধি" : "Girth"} field={girth} setField={setGirth} />
-                <DimensionInput label={lang === "bn" ? "দৈর্ঘ্য" : "Length"} field={length} setField={setLength} />
+                <DimensionInput
+                  label={lang === "bn" ? "দৈর্ঘ্য" : "Length"}
+                  field={length}
+                  setField={setLength}
+                  lang={lang}
+                  unitOptions={unitOptions}
+                />
+                <GirthFeetInchInput
+                  label={lang === "bn" ? "পরিধি" : "Girth"}
+                  field={girthFeetInch}
+                  setField={setGirthFeetInch}
+                  lang={lang}
+                />
                 <div>
                   <label className="block text-sm font-medium mb-1">{t("quantity") ?? "পরিমাণ"}</label>
                   <input type="number" min={1} className="input-field" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
@@ -540,9 +614,27 @@ const confirmReviewMutation = useMutation({
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <DimensionInput label={lang === "bn" ? "দৈর্ঘ্য" : "Length"} field={length} setField={setLength} />
-                <DimensionInput label={lang === "bn" ? "প্রস্থ" : "Width"} field={width} setField={setWidth} />
-                <DimensionInput label={lang === "bn" ? "পুরুত্ব" : "Thickness"} field={thickness} setField={setThickness} />
+                <DimensionInput
+                  label={lang === "bn" ? "দৈর্ঘ্য" : "Length"}
+                  field={length}
+                  setField={setLength}
+                  lang={lang}
+                  unitOptions={unitOptions}
+                />
+                <DimensionInput
+                  label={lang === "bn" ? "প্রস্থ" : "Width"}
+                  field={width}
+                  setField={setWidth}
+                  lang={lang}
+                  unitOptions={unitOptions}
+                />
+                <DimensionInput
+                  label={lang === "bn" ? "পুরুত্ব" : "Thickness"}
+                  field={thickness}
+                  setField={setThickness}
+                  lang={lang}
+                  unitOptions={unitOptions}
+                />
                 <div>
                   <label className="block text-sm font-medium mb-1">{t("quantity") ?? "পরিমাণ"}</label>
                   <input type="number" min={1} className="input-field" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
@@ -551,20 +643,21 @@ const confirmReviewMutation = useMutation({
             )}
 
             <div className="mt-5 rounded-xl bg-forest-50 dark:bg-forest-900/30 p-5">
-  <div className="flex items-center justify-between">
-    <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "CFT"}</span>
-    <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
-  </div>
-  {preview > 0 && (() => {
-    const b = breakdownCft(preview);
-    return (
-      <p className="text-xs text-wood-400 text-right mt-1">
-        ≈ {b.feet > 0 ? `${b.feet} ${lang === "bn" ? "ফুট" : "ft"} ` : ""}
-        {b.inches} {lang === "bn" ? "ইঞ্চি" : "in"} {b.points} {lang === "bn" ? "পয়েন্ট" : "pt"}
-      </p>
-    );
-  })()}
-</div>
+              <div className="flex items-center justify-between">
+                <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "সিএফটি"}</span>
+                <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
+              </div>
+              {preview > 0 &&
+                (() => {
+                  const b = breakdownCft(preview);
+                  return (
+                    <p className="text-xs text-wood-400 text-right mt-1">
+                      ≈ {b.feet !== 0 ? `${b.feet} ${lang === "bn" ? "ফুট" : "ft"} ` : ""}
+                      {b.inches} {lang === "bn" ? "ইঞ্চি" : "in"} {b.points} {lang === "bn" ? "পয়েন্ট" : "pt"}
+                    </p>
+                  );
+                })()}
+            </div>
 
             <Button className="w-full mt-4" size="lg" onClick={() => addManualMutation.mutate()} loading={addManualMutation.isPending}>
               <Plus className="h-5 w-5" /> {t("addToNotebook") ?? "খাতায় যোগ করুন"}
@@ -638,7 +731,7 @@ const confirmReviewMutation = useMutation({
                   <p className="text-xs text-wood-400">{group.slipNumber}</p>
                 </div>
                 <span className="text-sm font-semibold text-forest-600">
-                  {group.totalCFT.toFixed(2)} {lang === "bn" ? "CFT" : "CFT"}
+                  {group.totalCFT.toFixed(2)} {lang === "bn" ? "সিএফটি" : "CFT"}
                 </span>
               </div>
 
@@ -693,7 +786,7 @@ const confirmReviewMutation = useMutation({
         </div>
       </Card>
 
-{/* ---- History ---- */}
+      {/* ---- History ---- */}
       <Card>
         <div className="flex items-center justify-between mb-4">
           <CardHeader title={t("history") ?? "হিসাবের ইতিহাস"} />
@@ -800,7 +893,7 @@ const confirmReviewMutation = useMutation({
           </>
         )}
       </Card>
-      
+
       {/* ---- Review Modal (voice results) ---- */}
       {reviewBlocks && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -883,9 +976,9 @@ const confirmReviewMutation = useMutation({
               </Button>
               <Button variant="secondary" className="flex-1" onClick={() => setReviewBlocks(null)}>
                 {lang === "bn" ? "বাতিল" : "Cancel"}
-              </Button>    
+              </Button>
             </div>
-          </div>    
+          </div>
         </div>
       )}
     </div>
