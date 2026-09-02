@@ -48,26 +48,6 @@ interface FeetInchField {
 const emptyField = (): DimensionField => ({ value: "", unit: "feet" });
 const emptyFeetInchField = (): FeetInchField => ({ feet: "", inch: "" });
 
-// বাংলা সংখ্যা-শব্দকে অঙ্কে দেখানো + "এরপর"/"তারপর"-এর পর কমা বসানো —
-// শুধু transcript প্রিভিউ-এর জন্য, parsing logic backend-এই থাকে
-const banglaNumberWordsToDigits: Record<string, string> = {
-  "শূন্য": "০", "এক": "১", "দুই": "২", "তিন": "৩", "চার": "৪", "পাঁচ": "৫",
-  "ছয়": "৬", "সাত": "৭", "আট": "৮", "নয়": "৯", "দশ": "১০",
-  "এগারো": "১১", "বারো": "১২", "তেরো": "১৩", "চৌদ্দ": "১৪", "পনেরো": "১৫",
-  "ষোল": "১৬", "সতেরো": "১৭", "আঠারো": "১৮", "উনিশ": "১৯", "বিশ": "২০"
-};
-
-const formatTranscriptForDisplay = (text: string): string => {
-  let result = text;
-  const sortedWords = Object.keys(banglaNumberWordsToDigits).sort((a, b) => b.length - a.length);
-  for (const word of sortedWords) {
-    const re = new RegExp(word, "g");
-    result = result.replace(re, banglaNumberWordsToDigits[word]);
-  }
-  result = result.replace(/(এরপর|তারপর)/g, "$1,");
-  return result;
-};
-
 interface ReviewRow {
   lengthFeet: number;
   lengthInch: number;
@@ -262,15 +242,12 @@ export default function WoodMeasurementPage() {
     recognition.interimResults = false;
     recognition.lang = "bn-BD";
 
-       recognition.onresult = (event: any) => {
+    recognition.onresult = (event: any) => {
       let finalText = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) finalText += event.results[i][0].transcript;
       }
-      if (finalText.trim()) {
-        const formatted = formatTranscriptForDisplay(finalText.trim());
-        setTranscript((prev) => (prev ? `${prev} ${formatted}` : formatted));
-      }
+      if (finalText.trim()) setTranscript((prev) => (prev ? `${prev} ${finalText.trim()}` : finalText.trim()));
     };
     recognition.onerror = (e: any) => {
       if (e.error !== "no-speech") {
@@ -356,15 +333,19 @@ export default function WoodMeasurementPage() {
   const widthInches = toInches(Number(width.value) || 0, width.unit);
   const thicknessInches = toInches(Number(thickness.value) || 0, thickness.unit);
 
-  const preview = useMemo(() => {
+  // ⚠️ FIX: raw (unrounded) CFT আলাদাভাবে রাখা হচ্ছে — breakdownCft সবসময় এটাই ব্যবহার করবে,
+  // কারণ round-করা সংখ্যা দিয়ে ভাঙলে বইয়ের হিসাবের সাথে না-ও মিলতে পারে।
+  const previewRaw = useMemo(() => {
     const q = Number(quantity) || 0;
     if (mode === "round_log") {
       const lengthFeet = lengthInches / 12;
-      const cft = ((lengthFeet * girthInches * girthInches) / 2304) * q;
-      return Math.round(cft * 100) / 100;
+      return ((lengthFeet * girthInches * girthInches) / 2304) * q;
     }
-    return Math.round(((lengthInches * widthInches * thicknessInches * q) / 1728) * 100) / 100;
+    return (lengthInches * widthInches * thicknessInches * q) / 1728;
   }, [mode, girthInches, lengthInches, widthInches, thicknessInches, quantity]);
+
+  // শুধু ডিসপ্লের জন্য ২ decimal-এ round করা সংখ্যা — breakdown-এ এটা ব্যবহার হয় না
+  const preview = Math.round(previewRaw * 100) / 100;
 
   const resetInputs = () => {
     setGirthFeetInch(emptyFeetInchField());
@@ -670,9 +651,9 @@ export default function WoodMeasurementPage() {
                 <span className="text-base text-wood-600 dark:text-wood-300">{t("cftPreview") ?? "সিএফটি"}</span>
                 <span className="text-2xl font-bold text-forest-700 dark:text-forest-300">{preview.toFixed(2)}</span>
               </div>
-              {preview > 0 &&
+              {previewRaw > 0 &&
                 (() => {
-                  const b = breakdownCft(preview);
+                  const b = breakdownCft(previewRaw);
                   return (
                     <p className="text-xs text-wood-400 text-right mt-1">
                       ≈ {b.feet !== 0 ? `${b.feet} ${lang === "bn" ? "ফুট" : "ft"} ` : ""}
@@ -700,7 +681,7 @@ export default function WoodMeasurementPage() {
             <p className="mt-3 text-sm text-wood-500">
               {isListening
                 ? lang === "bn" ? "শুনছি... আবার চাপুন থামাতে" : "Listening... tap to stop"
-                : lang === "bn" ? "মাইকে চাপুন ও বলুন, যেমন: 'রহিমের কাঠ, দশ ফুট ছয় ইঞ্চির কাঠ দুইটা, রহিম শেষ'" : "Tap and speak naturally"}
+                : lang === "bn" ? "মাইকে চাপুন ও বলুন, যেমন: 'রহিমের কার্ড, দশ ফুট ছয় ইঞ্চির কাঠ দুইটা, রহিম শেষ'" : "Tap and speak naturally"}
             </p>
 
             {transcript && (
